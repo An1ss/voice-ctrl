@@ -7,6 +7,7 @@ import threading
 import time
 from pathlib import Path
 from datetime import datetime
+from .notifier import Notifier
 
 
 class AudioRecorder:
@@ -27,6 +28,7 @@ class AudioRecorder:
         self.audio_data = []
         self.recording_thread = None
         self.start_time = None
+        self.notifier = Notifier()
 
     def start_recording(self):
         """Start audio recording in a separate thread."""
@@ -107,6 +109,7 @@ class AudioRecorder:
         """
         if not self.audio_data:
             print("No audio data to save!")
+            self.notifier.notify_no_audio()
             return None
 
         # Concatenate all audio chunks

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from openai import OpenAI
 from openai import APIError, APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
+from .notifier import Notifier
 
 
 class WhisperTranscriber:
@@ -28,6 +29,9 @@ class WhisperTranscriber:
 
         # Set up logging
         self._setup_logging()
+
+        # Initialize notifier
+        self.notifier = Notifier(log_path=self.log_path)
 
         # Load API key from config
         self.api_key = self._load_api_key()
@@ -56,6 +60,7 @@ class WhisperTranscriber:
                 error_msg = f"Config file not found: {self.config_path}"
                 self.logger.error(error_msg)
                 print(f"ERROR: {error_msg}")
+                # Note: notifier not initialized yet at this point
                 return None
 
             with open(self.config_path, 'r') as f:
@@ -66,6 +71,7 @@ class WhisperTranscriber:
                 error_msg = "OpenAI API key not found in config file"
                 self.logger.error(error_msg)
                 print(f"ERROR: {error_msg}")
+                # Note: notifier not initialized yet at this point
                 return None
 
             return api_key
@@ -74,11 +80,13 @@ class WhisperTranscriber:
             error_msg = f"Invalid JSON in config file: {e}"
             self.logger.error(error_msg)
             print(f"ERROR: {error_msg}")
+            # Note: notifier not initialized yet at this point
             return None
         except Exception as e:
             error_msg = f"Error loading config file: {e}"
             self.logger.error(error_msg)
             print(f"ERROR: {error_msg}")
+            # Note: notifier not initialized yet at this point
             return None
 
     def transcribe(self, audio_file_path):
@@ -95,9 +103,7 @@ class WhisperTranscriber:
         try:
             # Check if client is initialized (API key loaded)
             if not self.client:
-                error_msg = "Cannot transcribe: OpenAI client not initialized (check API key)"
-                self.logger.error(error_msg)
-                print(f"ERROR: {error_msg}")
+                self.notifier.notify_invalid_api_key()
                 return None
 
             # Check if audio file exists
@@ -105,6 +111,7 @@ class WhisperTranscriber:
                 error_msg = f"Audio file not found: {audio_file_path}"
                 self.logger.error(error_msg)
                 print(f"ERROR: {error_msg}")
+                self.notifier.notify_transcription_error("Audio file not found")
                 return None
 
             print(f"Transcribing audio file: {audio_file_path}")
@@ -124,39 +131,28 @@ class WhisperTranscriber:
             return transcribed_text
 
         except AuthenticationError as e:
-            error_msg = f"Invalid API key: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_invalid_api_key()
             return None
 
         except APITimeoutError as e:
-            error_msg = f"API request timed out (30s): {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_network_timeout()
             return None
 
         except RateLimitError as e:
-            error_msg = f"API rate limit exceeded: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_api_failure("Rate limit exceeded")
             return None
 
         except APIConnectionError as e:
-            error_msg = f"Network connection error: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_api_failure("Network connection error")
             return None
 
         except APIError as e:
-            error_msg = f"OpenAI API error: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_api_failure(str(e))
             return None
 
         except Exception as e:
             error_msg = f"Unexpected error during transcription: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
+            self.notifier.notify_transcription_error(error_msg)
             return None
 
         finally:
