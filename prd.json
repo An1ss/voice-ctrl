@@ -16,7 +16,7 @@
         "No errors when running: python --version (should be 3.8+)"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "This is the foundation - must complete first before any other stories"
     },
     {
@@ -33,7 +33,7 @@
         "Manual test: Press shortcut, speak for 5 seconds, press again, verify WAV file created in /tmp/"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Use pynput.keyboard.GlobalHotKeys for cross-platform global hotkey support"
     },
     {

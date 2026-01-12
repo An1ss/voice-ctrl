@@ -5,3 +5,59 @@ Started: $(date +%Y-%m-%d)
 (Patterns discovered during this feature build)
 
 ---
+
+## US-001 - Set up project structure
+**Implemented:**
+- Initialized git repository
+- Created Python virtual environment using `python3 -m venv venv`
+- Set up directory structure: src/, config/, tests/, scripts/ralph/
+- Created requirements.txt with 6 core dependencies
+- Configured comprehensive .gitignore for Python projects
+- Wrote detailed README.md with setup instructions
+
+**Files changed:**
+- .gitignore (created)
+- requirements.txt (created)
+- README.md (created)
+- src/, config/, tests/, scripts/ralph/ directories (created)
+
+**Learnings:**
+- System uses python3 command (not python) on Ubuntu
+- Python 3.12.3 is installed, well above 3.8+ requirement
+- Virtual environment activation works via: source venv/bin/activate
+- Git repository was not initialized yet - had to do git init first
+- Used comprehensive .gitignore including IDE files and build artifacts
+- README should include overview, features, requirements, setup, usage, and project structure
+
+---
+
+## US-002 - Record audio on keyboard shortcut
+**Implemented:**
+- Created src/recorder.py with AudioRecorder class for audio recording
+- Created src/main.py as application entry point with global hotkey listener
+- Created src/__init__.py to make src a proper Python package
+- Implemented toggle recording behavior (press to start, press again to stop)
+- Audio saved as WAV files in /tmp/ directory with timestamp filenames
+- Used threading to avoid blocking keyboard listener during recording
+- Configured 16kHz sample rate, mono channel for Whisper API compatibility
+- Implemented 240-second maximum duration with automatic stop
+- Added numpy dependency to requirements.txt
+
+**Files changed:**
+- src/recorder.py (created)
+- src/main.py (created)
+- src/__init__.py (created)
+- requirements.txt (updated - added numpy)
+- README.md (updated - added portaudio19-dev system dependency)
+
+**Learnings:**
+- sounddevice library requires system dependency: portaudio19-dev (must be installed via apt-get)
+- pynput.keyboard.GlobalHotKeys is the correct class for cross-platform global hotkeys
+- Audio data from sounddevice comes as float32 numpy arrays, must convert to int16 for WAV
+- Threading is essential: recording runs in separate thread while keyboard listener remains responsive
+- WAV files require specific format: setnchannels, setsampwidth(2 for 16-bit), setframerate
+- /tmp/ directory is appropriate for temporary audio files (will be cleaned up by transcriber later)
+- System dependency installation requires sudo, must be documented in README
+- Audio conversion: multiply float32 by 32767 and cast to int16 for proper WAV encoding
+
+---
