@@ -1,6 +1,7 @@
 openai
 pynput
 sounddevice
+numpy
 pystray
 pyperclip
 plyer
