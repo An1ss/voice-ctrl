@@ -17,7 +17,8 @@
       ],
       "priority": 1,
       "passes": true,
-      "notes": "This is the foundation - must complete first before any other stories"
+      "notes": "This is the foundation - must complete first before any other stories",
+      "scope": "current"
     },
     {
       "id": "US-002",
@@ -34,7 +35,8 @@
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Use pynput.keyboard.GlobalHotKeys for cross-platform global hotkey support"
+      "notes": "Use pynput.keyboard.GlobalHotKeys for cross-platform global hotkey support",
+      "scope": "current"
     },
     {
       "id": "US-003",
@@ -51,7 +53,8 @@
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Requires valid OpenAI API key in config file for testing"
+      "notes": "Requires valid OpenAI API key in config file for testing",
+      "scope": "current"
     },
     {
       "id": "US-004",
@@ -68,7 +71,8 @@
       ],
       "priority": 4,
       "passes": true,
-      "notes": "May need to handle clipboard access permissions on some Linux systems"
+      "notes": "May need to handle clipboard access permissions on some Linux systems",
+      "scope": "current"
     },
     {
       "id": "US-005",
@@ -85,7 +89,8 @@
       ],
       "priority": 5,
       "passes": true,
-      "notes": "GNOME Shell may require TopIcons extension for tray icon support on some systems"
+      "notes": "GNOME Shell may require TopIcons extension for tray icon support on some systems",
+      "scope": "current"
     },
     {
       "id": "US-006",
@@ -102,7 +107,26 @@
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Test notifications work on Ubuntu with GNOME desktop environment"
+      "notes": "Test notifications work on Ubuntu with GNOME desktop environment",
+      "scope": "current"
+    },
+    {
+      "id": "US-007",
+      "title": "Use Shift+Insert for pasting instead of Ctrl+V",
+      "description": "Change paste mechanism to use Shift+Insert for better command-line tool compatibility.\n\n**What to do:**\n- Modify src/paster.py to simulate Shift+Insert instead of Ctrl+V\n- Update keyboard simulation to press Shift+Insert keys\n- Test with various command-line tools: bash, zsh, vim, nano, tmux\n- Test with GUI applications to ensure compatibility: Firefox, VS Code, gedit, LibreOffice\n\n**Implementation notes:**\n- Shift+Insert is the standard paste shortcut in terminals and most Linux applications\n- Ctrl+V may be intercepted by terminal emulators for other functions\n- Both shortcuts should work in most GUI applications, but Shift+Insert has better terminal support",
+      "acceptanceCriteria": [
+        "Shift+Insert keystroke simulated instead of Ctrl+V",
+        "Text pastes successfully in terminal applications: bash, zsh, gnome-terminal",
+        "Text pastes successfully in terminal editors: vim, nano, emacs",
+        "Text pastes successfully in GUI applications: Firefox, VS Code, gedit",
+        "Works inside tmux and screen sessions",
+        "No regression in paste functionality",
+        "Manual test: Record speech and verify paste works in terminal, vim, and browser"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Shift+Insert is more universal across terminal and GUI applications on Linux",
+      "scope": "current"
     }
   ]
 }

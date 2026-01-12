@@ -44,7 +44,8 @@ for i in $(seq 1 $MAX_ITER); do
   echo ""
 
   # Get next incomplete story (highest priority = lowest number)
-  NEXT_STORY=$(jq -r '.userStories | sort_by(.priority) | map(select(.passes == false)) | .[0] // empty' $PRD_FILE)
+  # Only select stories with scope="current" (filter out backlog)
+  NEXT_STORY=$(jq -r '.userStories | sort_by(.priority) | map(select(.passes == false and .scope == "current")) | .[0] // empty' $PRD_FILE)
 
   if [ -z "$NEXT_STORY" ]; then
     echo ""
@@ -134,6 +135,16 @@ $(echo "$NEXT_STORY" | jq '.')
 
   if [ "$STORY_STATUS" = "true" ]; then
     echo "✓ Story $STORY_ID marked complete"
+
+    # Push to GitHub
+    echo "📤 Pushing to GitHub..."
+    git push
+
+    if [ $? -eq 0 ]; then
+      echo "✓ Pushed successfully"
+    else
+      echo "⚠️  Push failed (check git status)"
+    fi
   else
     echo "⚠️  Warning: Story $STORY_ID not marked complete"
     echo "This might indicate the story implementation failed or quality checks didn't pass"
