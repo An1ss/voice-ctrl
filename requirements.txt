@@ -1,0 +1,6 @@
+openai
+pynput
+sounddevice
+pystray
+pyperclip
+plyer

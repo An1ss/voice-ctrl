@@ -1,0 +1,7 @@
+# Ralph Progress Log
+Started: $(date +%Y-%m-%d)
+
+## Codebase Patterns
+(Patterns discovered during this feature build)
+
+---

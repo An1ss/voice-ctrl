@@ -1,0 +1,108 @@
+{
+  "project": "VoiceControl",
+  "branchName": "ralph/mvp-phase-1",
+  "description": "System-wide voice dictation tool for Ubuntu using OpenAI Whisper API",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Set up project structure",
+      "description": "Create Python project with virtual environment and proper directory structure.\n\n**What to do:**\n- Create Python virtual environment (venv)\n- Set up directory structure: src/, config/, tests/, scripts/ralph/\n- Create requirements.txt with initial dependencies: openai, pynput, sounddevice, pystray, pyperclip, plyer\n- Configure .gitignore for Python projects (venv/, __pycache__, *.pyc, .env, *.log)\n- Write basic README.md with setup instructions and project overview",
+      "acceptanceCriteria": [
+        "Virtual environment created and can be activated with: source venv/bin/activate",
+        "Directory structure matches: src/, config/, tests/, scripts/ralph/",
+        "requirements.txt lists all needed dependencies",
+        ".gitignore excludes venv/, __pycache__, *.pyc, .env, *.log",
+        "README has clear setup instructions",
+        "No errors when running: python --version (should be 3.8+)"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "This is the foundation - must complete first before any other stories"
+    },
+    {
+      "id": "US-002",
+      "title": "Record audio on keyboard shortcut",
+      "description": "Implement global keyboard listener and audio recording functionality.\n\n**What to do:**\n- Use pynput library to register global keyboard shortcut (Ctrl+Shift+Space)\n- Use sounddevice library to capture audio from default microphone\n- Implement toggle behavior: first press starts recording, second press stops\n- Save recorded audio to temporary WAV file in /tmp/ directory\n- Implement 240-second maximum duration with automatic stop\n- Create src/recorder.py module with AudioRecorder class\n- Create src/main.py as entry point\n\n**Implementation notes:**\n- WAV format, 16kHz sample rate, mono channel (compatible with Whisper)\n- Use threading to avoid blocking the keyboard listener\n- Store recording state (idle/recording) as class attribute",
+      "acceptanceCriteria": [
+        "Global keyboard shortcut (Ctrl+Shift+Space) works across all applications",
+        "First press starts recording, second press stops recording",
+        "Audio saved as WAV file in /tmp/ directory",
+        "File format compatible with OpenAI Whisper API (16kHz, mono)",
+        "Maximum recording duration of 240 seconds enforced (auto-stop)",
+        "No errors when running: python -m src.main",
+        "Manual test: Press shortcut, speak for 5 seconds, press again, verify WAV file created in /tmp/"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Use pynput.keyboard.GlobalHotKeys for cross-platform global hotkey support"
+    },
+    {
+      "id": "US-003",
+      "title": "Transcribe audio using OpenAI Whisper API",
+      "description": "Integrate OpenAI Whisper API for speech-to-text transcription.\n\n**What to do:**\n- Install and configure openai Python SDK\n- Create src/transcriber.py module with WhisperTranscriber class\n- Read API key from config file at ~/.config/voice-ctrl/config.json\n- Send audio file to OpenAI Whisper API endpoint (/v1/audio/transcriptions)\n- Handle API responses and extract transcribed text\n- Implement error handling for: network errors, invalid API key, file not found, API rate limits\n- Clean up temporary audio file after transcription (success or failure)\n- Log errors to ~/.config/voice-ctrl/voice-ctrl.log\n\n**Implementation notes:**\n- Use openai.Audio.transcribe() method\n- Default to English language (can be auto-detected by Whisper)\n- Set timeout to 30 seconds for API calls",
+      "acceptanceCriteria": [
+        "Audio file successfully sent to OpenAI Whisper API",
+        "API key read from ~/.config/voice-ctrl/config.json",
+        "Transcribed text returned as string",
+        "Graceful error handling for: network issues, invalid API key, timeout",
+        "Temporary audio file deleted after transcription",
+        "Errors logged to ~/.config/voice-ctrl/voice-ctrl.log",
+        "Manual test: Create test WAV file, call transcribe(), verify text returned"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Requires valid OpenAI API key in config file for testing"
+    },
+    {
+      "id": "US-004",
+      "title": "Insert transcribed text automatically",
+      "description": "Auto-paste transcribed text at cursor position using clipboard.\n\n**What to do:**\n- Use pyperclip library to interact with system clipboard\n- Copy transcribed text to clipboard\n- Use pynput.keyboard.Controller to simulate Ctrl+V keystroke\n- Implement paste functionality in src/paster.py module\n- Optionally save and restore previous clipboard contents\n- Ensure focus remains on the application where user was typing\n\n**Implementation notes:**\n- Wait 100ms between clipboard copy and Ctrl+V to ensure clipboard is ready\n- Test with various applications: terminal, browser, text editor, LibreOffice\n- Handle edge cases: empty transcription, very long text",
+      "acceptanceCriteria": [
+        "Transcribed text copied to system clipboard",
+        "Ctrl+V keystroke simulated successfully",
+        "Text pasted in currently focused application",
+        "Works across different applications: terminal, Firefox, VS Code, gedit",
+        "Clipboard optionally restored to previous contents after paste",
+        "No errors when pasting text",
+        "Manual test: Run app, record speech, verify text appears at cursor in active window"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "May need to handle clipboard access permissions on some Linux systems"
+    },
+    {
+      "id": "US-005",
+      "title": "Show system tray icon",
+      "description": "Display persistent system tray icon with status indicators.\n\n**What to do:**\n- Use pystray library to create system tray icon\n- Create two icon states: idle (gray microphone) and recording (red microphone)\n- Display appropriate icon based on recording state\n- Show tooltip \"Voice Control\" when hovering over icon\n- Create src/tray_icon.py module with TrayIcon class\n- Icons can be simple PIL-generated images initially (or use icon files if available)\n- Ensure icon is visible in Ubuntu system tray (GNOME Shell)\n\n**Implementation notes:**\n- Use pystray.Icon class\n- Update icon in real-time when recording starts/stops\n- Icon should persist until application is closed",
+      "acceptanceCriteria": [
+        "System tray icon appears when application starts",
+        "Icon shows idle state by default (gray/white microphone icon)",
+        "Icon changes to recording state (red microphone) when recording",
+        "Icon visible in Ubuntu GNOME Shell system tray",
+        "Tooltip displays \"Voice Control\" on hover",
+        "Icon updates in real-time based on recording state",
+        "Manual test: Start app, verify icon in tray, start recording, verify icon changes color"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "GNOME Shell may require TopIcons extension for tray icon support on some systems"
+    },
+    {
+      "id": "US-006",
+      "title": "Handle errors with notifications",
+      "description": "Display desktop notifications for errors and important events.\n\n**What to do:**\n- Use plyer library for cross-platform desktop notifications\n- Create src/notifier.py module with Notifier class\n- Show notifications for: transcription errors, API failures, network timeouts, invalid API key, no audio detected\n- Each error type should have a specific, user-friendly message\n- Log all errors to ~/.config/voice-ctrl/voice-ctrl.log with timestamp\n- Ensure application continues running after non-fatal errors\n- Create ~/.config/voice-ctrl/ directory if it doesn't exist\n\n**Implementation notes:**\n- Use plyer.notification.notify() with title and message\n- Notification timeout: 5 seconds for errors\n- Log format: [YYYY-MM-DD HH:MM:SS] ERROR: message",
+      "acceptanceCriteria": [
+        "Desktop notification shown for errors",
+        "Specific error messages for: no audio detected, API failure, network timeout, invalid API key",
+        "All errors logged to ~/.config/voice-ctrl/voice-ctrl.log",
+        "Log file created if it doesn't exist",
+        "Application continues running after non-fatal errors",
+        "Log entries include timestamp and error type",
+        "Manual test: Trigger error condition (e.g., invalid API key), verify notification appears and error logged"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Test notifications work on Ubuntu with GNOME desktop environment"
+    }
+  ]
+}
