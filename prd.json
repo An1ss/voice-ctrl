@@ -50,7 +50,7 @@
         "Manual test: Create test WAV file, call transcribe(), verify text returned"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Requires valid OpenAI API key in config file for testing"
     },
     {
@@ -67,7 +67,7 @@
         "Manual test: Run app, record speech, verify text appears at cursor in active window"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "May need to handle clipboard access permissions on some Linux systems"
     },
     {
@@ -84,7 +84,7 @@
         "Manual test: Start app, verify icon in tray, start recording, verify icon changes color"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "GNOME Shell may require TopIcons extension for tray icon support on some systems"
     },
     {
@@ -101,7 +101,7 @@
         "Manual test: Trigger error condition (e.g., invalid API key), verify notification appears and error logged"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Test notifications work on Ubuntu with GNOME desktop environment"
     }
   ]

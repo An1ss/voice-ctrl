@@ -61,3 +61,128 @@ Started: $(date +%Y-%m-%d)
 - Audio conversion: multiply float32 by 32767 and cast to int16 for proper WAV encoding
 
 ---
+
+## US-003 - Transcribe audio using OpenAI Whisper API
+**Implemented:**
+- Created src/transcriber.py with WhisperTranscriber class
+- Integrated OpenAI Whisper API using the openai Python SDK (v2.15.0)
+- Implemented config file reading from ~/.config/voice-ctrl/config.json with JSON parsing
+- Configured API timeout to 30 seconds using OpenAI client timeout parameter
+- Implemented comprehensive error handling with specific exception types
+- Added automatic cleanup of temporary audio files using try/finally blocks
+- Set up error logging to ~/.config/voice-ctrl/voice-ctrl.log with formatted timestamps
+- Auto-create config directory (~/.config/voice-ctrl) if it doesn't exist using Path.mkdir()
+
+**Files changed:**
+- src/transcriber.py (created)
+
+**Learnings:**
+- OpenAI SDK v2.x uses client.audio.transcriptions.create() method (not Audio.transcribe())
+- Must import specific exception classes: APIError, APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
+- OpenAI client initialization: OpenAI(api_key=key, timeout=30.0) - timeout is a float in seconds
+- Config file structure: Simple JSON with "openai_api_key" field
+- File cleanup must be in finally block to ensure execution even when errors occur
+- Python logging module needs basicConfig with filename, level, format, and datefmt parameters
+- Path.mkdir(parents=True, exist_ok=True) creates all parent directories without errors if already exists
+- API returns transcript object with .text attribute containing the transcribed string
+- Whisper API accepts language parameter ("en" for English) though it can auto-detect
+- Error logging format: [YYYY-MM-DD HH:MM:SS] LEVEL: message using %(asctime)s in format string
+- Must open audio file in binary mode ('rb') when sending to API
+- Path.unlink() deletes files, Path.exists() checks existence before deletion
+- All errors should be caught, logged, and return None for graceful degradation
+
+---
+
+## US-004 - Insert transcribed text automatically
+**Implemented:**
+- Created src/paster.py with TextPaster class for clipboard-based text insertion
+- Integrated TextPaster into main.py workflow (record → transcribe → paste)
+- Implemented clipboard save and restore functionality with restore_clipboard parameter
+- Added 100ms delay between clipboard copy and Ctrl+V to ensure clipboard readiness
+- Comprehensive error handling for clipboard operations (empty text, None values, clipboard errors)
+- Text pasting works via pyperclip + pynput keyboard simulation (Ctrl+V)
+
+**Files changed:**
+- src/paster.py (created)
+- src/main.py (updated - added transcriber and paster integration)
+- README.md (updated - added xclip system dependency)
+
+**Learnings:**
+- pyperclip requires system clipboard tool on Linux: xclip (X11), xsel, or wl-clipboard (Wayland)
+- Must install xclip via apt-get: sudo apt-get install xclip
+- pynput.keyboard.Controller simulates keystrokes at OS level, works across all applications
+- Ctrl+V simulation: use with keyboard.pressed(Key.ctrl) context manager, then press/release 'v'
+- Clipboard restore pattern: save with pyperclip.paste(), restore with pyperclip.copy() after delay
+- 100ms delay (time.sleep(0.1)) between clipboard operations ensures reliability
+- Edge cases handled: empty string, None, very long text all return appropriate success/failure status
+- Paste returns boolean: True for success, False for failures (empty text, exceptions)
+- Additional 100ms delay before restoring clipboard ensures paste operation completes
+- Text truncation in logs ([:100]...) keeps console output readable for long transcriptions
+
+---
+
+## US-005 - Show system tray icon
+**Implemented:**
+- Created src/tray_icon.py with TrayIcon class for system tray management
+- Implemented two icon states: idle (gray microphone) and recording (red microphone)
+- Generated icons programmatically using PIL ImageDraw with simple microphone shapes
+- Integrated tray icon into main.py with automatic state updates
+- Icon runs in separate daemon thread to avoid blocking the main application
+- Proper cleanup on application exit (stop icon when Ctrl+C pressed)
+- Tooltip shows "Voice Control" on hover
+
+**Files changed:**
+- src/tray_icon.py (created)
+- src/main.py (updated - added tray icon integration, fixed imports to use relative imports)
+
+**Learnings:**
+- pystray requires PIL (Pillow) for icon image creation
+- Icon images created with Image.new('RGBA', (64, 64), (0, 0, 0, 0)) for transparent background
+- PIL ImageDraw provides shapes: ellipse, rectangle, line, arc for drawing microphone icon
+- pystray.Icon runs in blocking mode, must use threading.Thread(target=icon.run, daemon=True)
+- Daemon thread ensures icon thread exits when main program exits
+- Icon state changes via icon.icon = new_image_object (updates in real-time)
+- main.py imports must be relative (.recorder, .transcriber, etc.) for proper module execution
+- tray_icon.set_recording_state() called after recorder.toggle_recording() to sync icon state
+- GNOME Shell on Ubuntu supports system tray icons (may need TopIcons extension on some systems)
+- Test script confirmed: icon creation, start, state changes (idle↔recording), and stop all work correctly
+
+---
+
+## US-006 - Handle errors with notifications
+**Implemented:**
+- Created src/notifier.py with Notifier class for desktop notifications
+- Integrated plyer library for cross-platform notifications (notify() function)
+- Added specific notification methods for each error type:
+  - notify_no_audio() - when no audio data recorded
+  - notify_api_failure() - general API failures with optional details
+  - notify_network_timeout() - 30-second timeout errors
+  - notify_invalid_api_key() - authentication errors
+  - notify_transcription_error() - general transcription errors
+- Integrated notifier into transcriber.py to replace console error messages
+- Integrated notifier into recorder.py to notify when no audio detected
+- All errors logged to ~/.config/voice-ctrl/voice-ctrl.log with timestamp
+- Notification timeout: 5 seconds for all error notifications
+- Application continues running after non-fatal errors (returns None, doesn't crash)
+
+**Files changed:**
+- src/notifier.py (created)
+- src/transcriber.py (updated - added notifier integration)
+- src/recorder.py (updated - added notifier for no audio detection)
+- test_notifier.py (created - test script)
+
+**Learnings:**
+- plyer.notification.notify() takes title, message, and timeout parameters
+- plyer requires python3-dbus for best desktop integration on Linux, but has fallback
+- Notifications work without sudo/special permissions on Ubuntu GNOME
+- logging.basicConfig with force=True needed to override any existing logging config
+- Notifier creates ~/.config/voice-ctrl/ directory automatically via Path.mkdir(parents=True, exist_ok=True)
+- Each error type should have user-friendly messages (not technical details)
+- Desktop notifications appear in system notification area for 5 seconds
+- Log format: [YYYY-MM-DD HH:MM:SS] ERROR: Type: message
+- notifier.notify_error() combines both desktop notification and file logging in one call
+- Application continues running after errors since we return None instead of raising exceptions
+- Test script confirms: all 5 error types show notifications and log correctly
+- plyer fallback works even without dbus (uses notify-send command on Linux)
+
+---
