@@ -20,7 +20,7 @@ VoiceControl is a voice-to-text application that enables hands-free typing acros
 - Python 3.8 or higher
 - Ubuntu (GNOME desktop environment)
 - OpenAI API key
-- System dependencies: `portaudio19-dev` (for audio recording)
+- System dependencies: `portaudio19-dev` (for audio recording), `xclip` (for clipboard access)
 
 ## Setup Instructions
 
@@ -42,7 +42,7 @@ source venv/bin/activate
 
 ```bash
 sudo apt-get update
-sudo apt-get install portaudio19-dev
+sudo apt-get install portaudio19-dev xclip
 ```
 
 ### 4. Install Python dependencies
