@@ -157,11 +157,17 @@ def main():
         """Show about dialog."""
         show_about_dialog()
 
+    # Quit handler will be set after hotkey is created
+    quit_handler = {'hotkey': None}
+
     def on_quit():
         """Quit the application."""
         print("\nQuitting VoiceControl...")
         if recorder.is_recording:
             recorder.stop_recording()
+        # Stop the keyboard listener
+        if quit_handler['hotkey']:
+            quit_handler['hotkey'].stop()
         sys.exit(0)
 
     # Initialize tray icon with menu callbacks
@@ -237,6 +243,8 @@ def main():
             parsed_shortcut: on_hotkey
         })
         hotkey.start()
+        # Store hotkey reference for clean shutdown
+        quit_handler['hotkey'] = hotkey
     except Exception as e:
         error_msg = f"Failed to register keyboard shortcut '{shortcut_str}': {e}"
         print(f"ERROR: {error_msg}")

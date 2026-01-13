@@ -143,10 +143,12 @@ class TrayIcon:
 
     def _handle_quit(self, icon, item):
         """Handle Quit menu click."""
-        if self.on_quit:
-            self.on_quit()
-        # Stop the icon
+        # Stop the icon first to remove it from tray
         icon.stop()
+        # Then call the quit callback
+        if self.on_quit:
+            # Run quit in a thread to ensure icon.stop() completes first
+            threading.Thread(target=self.on_quit, daemon=False).start()
 
     def start(self):
         """Start the system tray icon in a separate thread."""
