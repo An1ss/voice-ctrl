@@ -1,28 +1,28 @@
 """Audio transcription module using OpenAI Whisper API."""
 
-import json
 import logging
-import os
 from pathlib import Path
 from openai import OpenAI
 from openai import APIError, APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
 from .notifier import Notifier
+from .config import Config
 
 
 class WhisperTranscriber:
     """Transcribes audio files using OpenAI Whisper API."""
 
-    def __init__(self, config_path=None, log_path=None):
+    def __init__(self, config=None):
         """Initialize the Whisper transcriber.
 
         Args:
-            config_path: Path to config file (defaults to ~/.config/voice-ctrl/config.json)
-            log_path: Path to log file (defaults to ~/.config/voice-ctrl/voice-ctrl.log)
+            config: Config object (if None, will create a new one)
         """
+        # Use provided config or create new one
+        self.config = config if config else Config()
+
         # Set default paths
         config_dir = Path.home() / ".config" / "voice-ctrl"
-        self.config_path = Path(config_path) if config_path else config_dir / "config.json"
-        self.log_path = Path(log_path) if log_path else config_dir / "voice-ctrl.log"
+        self.log_path = config_dir / "voice-ctrl.log"
 
         # Ensure config directory exists
         config_dir.mkdir(parents=True, exist_ok=True)
@@ -34,7 +34,7 @@ class WhisperTranscriber:
         self.notifier = Notifier(log_path=self.log_path)
 
         # Load API key from config
-        self.api_key = self._load_api_key()
+        self.api_key = self.config.get_api_key()
 
         # Initialize OpenAI client
         self.client = OpenAI(api_key=self.api_key, timeout=30.0) if self.api_key else None
@@ -45,49 +45,10 @@ class WhisperTranscriber:
             filename=str(self.log_path),
             level=logging.ERROR,
             format='[%(asctime)s] %(levelname)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            datefmt='%Y-%m-%d %H:%M:%S',
+            force=True
         )
         self.logger = logging.getLogger(__name__)
-
-    def _load_api_key(self):
-        """Load OpenAI API key from config file.
-
-        Returns:
-            API key string, or None if not found or error occurred
-        """
-        try:
-            if not self.config_path.exists():
-                error_msg = f"Config file not found: {self.config_path}"
-                self.logger.error(error_msg)
-                print(f"ERROR: {error_msg}")
-                # Note: notifier not initialized yet at this point
-                return None
-
-            with open(self.config_path, 'r') as f:
-                config = json.load(f)
-
-            api_key = config.get('openai_api_key')
-            if not api_key:
-                error_msg = "OpenAI API key not found in config file"
-                self.logger.error(error_msg)
-                print(f"ERROR: {error_msg}")
-                # Note: notifier not initialized yet at this point
-                return None
-
-            return api_key
-
-        except json.JSONDecodeError as e:
-            error_msg = f"Invalid JSON in config file: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
-            # Note: notifier not initialized yet at this point
-            return None
-        except Exception as e:
-            error_msg = f"Error loading config file: {e}"
-            self.logger.error(error_msg)
-            print(f"ERROR: {error_msg}")
-            # Note: notifier not initialized yet at this point
-            return None
 
     def transcribe(self, audio_file_path):
         """Transcribe audio file using OpenAI Whisper API.

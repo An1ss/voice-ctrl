@@ -53,19 +53,27 @@ pip install -r requirements.txt
 
 ### 5. Configure API key
 
-Create a configuration file at `~/.config/voice-ctrl/config.json`:
+A configuration file will be automatically created at `~/.config/voice-ctrl/config.json` when you first run the application. You can manually create it beforehand:
 
 ```bash
 mkdir -p ~/.config/voice-ctrl
 ```
 
-Add your OpenAI API key to the config file:
+Edit the configuration file with your settings:
 
 ```json
 {
-  "api_key": "your-openai-api-key-here"
+  "api_key": "your-openai-api-key-here",
+  "max_duration_seconds": 240,
+  "audio_feedback_enabled": true
 }
 ```
+
+**Configuration Options:**
+
+- `api_key` (string): Your OpenAI API key (required for transcription)
+- `max_duration_seconds` (number): Maximum recording duration in seconds (default: 240)
+- `audio_feedback_enabled` (boolean): Enable audio beeps for recording feedback (default: true)
 
 ### 6. Run the application
 

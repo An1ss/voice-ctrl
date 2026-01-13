@@ -1,6 +1,7 @@
 """Main entry point for VoiceControl application."""
 
 from pynput import keyboard
+from .config import Config
 from .recorder import AudioRecorder
 from .transcriber import WhisperTranscriber
 from .paster import TextPaster
@@ -13,9 +14,12 @@ def main():
     print("Press Ctrl+Shift+Space to start/stop recording")
     print("Press Ctrl+C to exit\n")
 
-    # Initialize components
-    recorder = AudioRecorder()
-    transcriber = WhisperTranscriber()
+    # Load configuration
+    config = Config()
+
+    # Initialize components with config settings
+    recorder = AudioRecorder(max_duration=config.get_max_duration())
+    transcriber = WhisperTranscriber(config=config)
     paster = TextPaster(restore_clipboard=True)
     tray_icon = TrayIcon()
 
