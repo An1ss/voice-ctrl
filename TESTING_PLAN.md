@@ -135,9 +135,9 @@ mv ~/.config/voice-ctrl/config.json.backup ~/.config/voice-ctrl/config.json
 
 
 
-## Additional issue
+## Additional issue - xclip timeout warnings
 
-Noticed this in the app terminal, everything was working fine though... 
+Noticed this in the app terminal, everything was working fine though...
 
 ```bash
 System tray icon started
@@ -157,18 +157,42 @@ Simulated Shift+Insert keystroke
 Restored previous clipboard contents
 ```
 
+**Status:** Identified as US-018 - xclip timeout too short (1.0s)
+
+---
+
+## Fixes Applied During Testing
+
+### US-012.1: Terminal Paste Issue (FIXED ✓)
+**Issue:** Shift+Insert in terminals was pasting old clipboard content
+**Root Cause:** Linux X11 has separate CLIPBOARD and PRIMARY selections. pyperclip only wrote to CLIPBOARD, but Shift+Insert reads from PRIMARY
+**Fix:** Updated src/paster.py to copy to both CLIPBOARD and PRIMARY selections using xclip
+**Status:** Fixed and committed
+
+### Tray Icon Menu Crash (FIXED ✓)
+**Issue:** App crashed on startup with "TypeError: pystray._base.Menu() argument after * must be an iterable, not function"
+**Root Cause:** _create_menu() returned raw function instead of Menu object
+**Fix:** Wrapped menu_builder with Menu() in src/tray_icon.py
+**Status:** Fixed and committed
+
 ---
 
 ## Summary
 
-**Tests Completed:** ___ / 6
-**Passing:** 3
-**Failing:** 5
+**Tests Completed:** 6 / 6
+**Passing:** 3 (US-006, US-009, US-010)
+**Failing:** 3 (US-005, US-008, US-011, US-012, US-015)
+**Fixed During Testing:** 2 (US-012.1, tray icon crash)
 
-**Known Issues:**
-- US-011: Right-click menu on tray icon not working
+**Remaining Issues for Ralph (US-013 to US-018):**
+- US-013: Tray icon tooltip not showing on hover
+- US-014: Config file missing default parameters
+- US-015: Auto-stop doesn't transcribe recording
+- US-016: Right-click menu on tray icon not working
+- US-017: Setup wizard save button not visible
+- US-018: xclip timeout warnings (1.0s too short)
 
 **Action Items:**
-- [ ] Fix tray icon right-click menu
-- [ ] Test setup wizard
-- [ ] Verify all config parameters work
+- [x] Fix terminal paste issue (US-012.1) - DONE
+- [x] Fix tray icon startup crash - DONE
+- [ ] Run Ralph to fix remaining 6 bugs (US-013 to US-018)
