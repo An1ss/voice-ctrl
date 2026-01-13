@@ -33,12 +33,19 @@ class SettingsWindow:
         # Create new window
         self.window = tk.Tk()
         self.window.title("Voice Control Settings")
-        self.window.geometry("500x400")
+        self.window.geometry("600x420")
         self.window.resizable(False, False)
 
-        # Create main frame with padding
-        main_frame = ttk.Frame(self.window, padding="20")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # Configure window grid to center the content
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(0, weight=1)
+
+        # Create main frame with padding (content will be centered)
+        main_frame = ttk.Frame(self.window, padding="25")
+        main_frame.grid(row=0, column=0)
+
+        # Configure column weights for proper expansion of entry fields
+        main_frame.columnconfigure(1, weight=1)
 
         # Title
         title_label = ttk.Label(
@@ -51,27 +58,27 @@ class SettingsWindow:
         # API Key
         row = 1
         ttk.Label(main_frame, text="OpenAI API Key:").grid(
-            row=row, column=0, sticky=tk.W, pady=5
+            row=row, column=0, sticky=tk.W, pady=8
         )
-        api_key_entry = ttk.Entry(main_frame, width=40, show="*")
+        api_key_entry = ttk.Entry(main_frame, show="*")
         api_key_entry.insert(0, self.config.get_api_key())
-        api_key_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
+        api_key_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
         self.entry_widgets['api_key'] = api_key_entry
 
         # Max Duration
         row += 1
         ttk.Label(main_frame, text="Max Recording Duration (seconds):").grid(
-            row=row, column=0, sticky=tk.W, pady=5
+            row=row, column=0, sticky=tk.W, pady=8
         )
-        duration_entry = ttk.Entry(main_frame, width=40)
+        duration_entry = ttk.Entry(main_frame)
         duration_entry.insert(0, str(self.config.get_max_duration()))
-        duration_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
+        duration_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
         self.entry_widgets['max_duration_seconds'] = duration_entry
 
         # Audio Feedback
         row += 1
         ttk.Label(main_frame, text="Audio Feedback (beeps):").grid(
-            row=row, column=0, sticky=tk.W, pady=5
+            row=row, column=0, sticky=tk.W, pady=8
         )
         audio_feedback_var = tk.BooleanVar(value=self.config.is_audio_feedback_enabled())
         audio_feedback_check = ttk.Checkbutton(
@@ -79,17 +86,17 @@ class SettingsWindow:
             text="Enable beeps on start/stop",
             variable=audio_feedback_var
         )
-        audio_feedback_check.grid(row=row, column=1, sticky=tk.W, pady=5, padx=(10, 0))
+        audio_feedback_check.grid(row=row, column=1, sticky=tk.W, pady=8, padx=(15, 0))
         self.entry_widgets['audio_feedback_enabled'] = audio_feedback_var
 
         # Keyboard Shortcut
         row += 1
         ttk.Label(main_frame, text="Keyboard Shortcut:").grid(
-            row=row, column=0, sticky=tk.W, pady=5
+            row=row, column=0, sticky=tk.W, pady=8
         )
-        shortcut_entry = ttk.Entry(main_frame, width=40)
+        shortcut_entry = ttk.Entry(main_frame)
         shortcut_entry.insert(0, self.config.get_keyboard_shortcut())
-        shortcut_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
+        shortcut_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
         self.entry_widgets['keyboard_shortcut'] = shortcut_entry
 
         # Note about restart
@@ -100,36 +107,39 @@ class SettingsWindow:
             font=("", 9, "italic"),
             foreground="gray"
         )
-        note_label.grid(row=row, column=0, columnspan=2, pady=(5, 15))
+        note_label.grid(row=row, column=0, columnspan=2, pady=(10, 20))
 
         # Buttons frame
         row += 1
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=row, column=0, columnspan=2, pady=(10, 0))
+        button_frame.grid(row=row, column=0, columnspan=2, pady=(15, 0))
 
         # Test Recording button
         test_button = ttk.Button(
             button_frame,
             text="Test Recording",
-            command=self._test_recording
+            command=self._test_recording,
+            width=15
         )
-        test_button.grid(row=0, column=0, padx=5)
+        test_button.grid(row=0, column=0, padx=8)
 
         # Save button
         save_button = ttk.Button(
             button_frame,
             text="Save",
-            command=self._save_settings
+            command=self._save_settings,
+            width=12
         )
-        save_button.grid(row=0, column=1, padx=5)
+        save_button.grid(row=0, column=1, padx=8)
 
         # Cancel button
         cancel_button = ttk.Button(
             button_frame,
             text="Cancel",
-            command=self._close_window
+            command=self._close_window,
+            width=12
         )
-        cancel_button.grid(row=0, column=2, padx=5)
+        cancel_button.grid(row=0, column=2, padx=8)
 
         # Handle window close
         self.window.protocol("WM_DELETE_WINDOW", self._close_window)
@@ -240,18 +250,24 @@ def show_about_dialog():
     """Show the About dialog."""
     about_window = tk.Tk()
     about_window.title("About Voice Control")
-    about_window.geometry("400x250")
+    about_window.geometry("500x320")
     about_window.resizable(False, False)
 
-    # Main frame
-    frame = ttk.Frame(about_window, padding="20")
+    # Main frame with more padding
+    frame = ttk.Frame(about_window, padding="40")
     frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+    # Configure frame to center content
+    about_window.columnconfigure(0, weight=1)
+    about_window.rowconfigure(0, weight=1)
+    frame.columnconfigure(0, weight=1)
 
     # Title
     title_label = ttk.Label(
         frame,
         text="Voice Control",
-        font=("", 16, "bold")
+        font=("", 18, "bold"),
+        justify=tk.CENTER
     )
     title_label.grid(row=0, column=0, pady=(0, 10))
 
@@ -259,9 +275,10 @@ def show_about_dialog():
     version_label = ttk.Label(
         frame,
         text="Version 1.0.0",
-        font=("", 10)
+        font=("", 11),
+        justify=tk.CENTER
     )
-    version_label.grid(row=1, column=0, pady=(0, 20))
+    version_label.grid(row=1, column=0, pady=(0, 25))
 
     # Description
     desc_label = ttk.Label(
@@ -270,15 +287,17 @@ def show_about_dialog():
              "using OpenAI Whisper API\n\n"
              "Record audio with a keyboard shortcut,\n"
              "transcribe using AI, and paste automatically.",
-        justify=tk.CENTER
+        justify=tk.CENTER,
+        font=("", 10)
     )
-    desc_label.grid(row=2, column=0, pady=(0, 20))
+    desc_label.grid(row=2, column=0, pady=(0, 30))
 
     # Close button
     close_button = ttk.Button(
         frame,
         text="Close",
-        command=about_window.destroy
+        command=about_window.destroy,
+        width=15
     )
     close_button.grid(row=3, column=0)
 
