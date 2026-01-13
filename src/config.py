@@ -88,6 +88,25 @@ class Config:
 
             merged_config.update(config)
 
+            # Check if migration is needed (config is missing some default keys)
+            needs_migration = False
+            for key in self.DEFAULT_CONFIG:
+                if key not in config:
+                    needs_migration = True
+                    break
+
+            # If migration is needed, write the complete config back to disk
+            if needs_migration:
+                print(f"Migrating config file to include missing parameters...")
+                try:
+                    with open(self.config_path, 'w') as f:
+                        json.dump(merged_config, f, indent=2)
+                    print(f"Config migration complete. All parameters initialized.")
+                except Exception as e:
+                    error_msg = f"Failed to migrate config file: {e}"
+                    self.logger.error(error_msg)
+                    print(f"WARNING: {error_msg}")
+
             print(f"Configuration loaded from: {self.config_path}")
             return merged_config
 
