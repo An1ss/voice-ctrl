@@ -320,7 +320,7 @@
       ],
       "priority": 19,
       "passes": false,
-      "scope": "next",
+      "scope": "current",
       "notes": "Nice-to-have feature for retrieving previous transcriptions"
     },
     {
@@ -340,7 +340,7 @@
       ],
       "priority": 20,
       "passes": false,
-      "scope": "next",
+      "scope": "current",
       "notes": "High priority - makes installation much easier for end users"
     },
     {
@@ -359,7 +359,7 @@
       ],
       "priority": 21,
       "passes": false,
-      "scope": "next",
+      "scope": "current",
       "notes": "Nice-to-have for better user experience, goes well with .deb packaging"
     }
   ]
