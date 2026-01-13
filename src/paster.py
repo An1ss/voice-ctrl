@@ -51,7 +51,6 @@ class TextPaster:
                     ['xclip', '-selection', 'clipboard'],
                     input=text.encode('utf-8'),
                     check=True,
-                    capture_output=True,
                     timeout=3.0
                 )
                 print(f"Copied to CLIPBOARD: {text[:100]}..." if len(text) > 100 else f"Copied to CLIPBOARD: {text}")
@@ -68,7 +67,6 @@ class TextPaster:
                     ['xclip', '-selection', 'primary'],
                     input=text.encode('utf-8'),
                     check=True,
-                    capture_output=True,
                     timeout=3.0
                 )
                 print(f"Copied to PRIMARY selection (for Shift+Insert)")
