@@ -1,6 +1,7 @@
 """Text pasting module using clipboard and keyboard simulation."""
 
 import time
+import subprocess
 import pyperclip
 from pynput.keyboard import Controller, Key
 
@@ -43,9 +44,38 @@ class TextPaster:
                     print(f"WARNING: Could not read previous clipboard contents: {e}")
                     # Continue anyway, just won't restore clipboard
 
-            # Copy transcribed text to clipboard
-            pyperclip.copy(text)
-            print(f"Copied text to clipboard: {text[:100]}..." if len(text) > 100 else f"Copied text to clipboard: {text}")
+            # Copy transcribed text to BOTH clipboard selections
+            # CLIPBOARD selection (Ctrl+C/V, Ctrl+Shift+V)
+            try:
+                subprocess.run(
+                    ['xclip', '-selection', 'clipboard'],
+                    input=text.encode('utf-8'),
+                    check=True,
+                    capture_output=True,
+                    timeout=1.0
+                )
+                print(f"Copied to CLIPBOARD: {text[:100]}..." if len(text) > 100 else f"Copied to CLIPBOARD: {text}")
+            except FileNotFoundError:
+                print("WARNING: xclip not found - falling back to pyperclip")
+                pyperclip.copy(text)
+            except Exception as e:
+                print(f"WARNING: Failed to copy to CLIPBOARD via xclip: {e}")
+                pyperclip.copy(text)
+
+            # PRIMARY selection (Shift+Insert, middle-click)
+            try:
+                subprocess.run(
+                    ['xclip', '-selection', 'primary'],
+                    input=text.encode('utf-8'),
+                    check=True,
+                    capture_output=True,
+                    timeout=1.0
+                )
+                print(f"Copied to PRIMARY selection (for Shift+Insert)")
+            except FileNotFoundError:
+                print("WARNING: xclip not found - Shift+Insert may not work correctly")
+            except Exception as e:
+                print(f"WARNING: Failed to copy to PRIMARY selection: {e}")
 
             # Wait for clipboard to be ready
             time.sleep(self.paste_delay)
