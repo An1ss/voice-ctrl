@@ -14,7 +14,8 @@ class Config:
         "api_key": "",
         "max_duration_seconds": 240,
         "audio_feedback_enabled": True,
-        "keyboard_shortcut": "Ctrl+Shift+Space"
+        "keyboard_shortcut": "Ctrl+Shift+Space",
+        "autostart_enabled": False
     }
 
     def __init__(self, config_path=None, log_path=None):
@@ -171,6 +172,10 @@ class Config:
         if "keyboard_shortcut" in config and not isinstance(config["keyboard_shortcut"], str):
             return False
 
+        # Check that autostart_enabled is a boolean
+        if "autostart_enabled" in config and not isinstance(config["autostart_enabled"], bool):
+            return False
+
         return True
 
     def get(self, key, default=None):
@@ -216,3 +221,11 @@ class Config:
             Keyboard shortcut string (default "Ctrl+Shift+Space")
         """
         return self.settings.get("keyboard_shortcut", "Ctrl+Shift+Space")
+
+    def is_autostart_enabled(self):
+        """Check if autostart is enabled.
+
+        Returns:
+            True if enabled, False otherwise
+        """
+        return self.settings.get("autostart_enabled", False)

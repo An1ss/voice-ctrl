@@ -5,6 +5,8 @@ from tkinter import ttk, messagebox
 import json
 from pathlib import Path
 import threading
+import os
+import subprocess
 
 
 class SettingsWindow:
@@ -33,7 +35,7 @@ class SettingsWindow:
         # Create new window
         self.window = tk.Tk()
         self.window.title("Voice Control Settings")
-        self.window.geometry("600x420")
+        self.window.geometry("600x470")
         self.window.resizable(False, False)
 
         # Configure window grid to center the content
@@ -98,6 +100,20 @@ class SettingsWindow:
         shortcut_entry.insert(0, self.config.get_keyboard_shortcut())
         shortcut_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
         self.entry_widgets['keyboard_shortcut'] = shortcut_entry
+
+        # Start at Login
+        row += 1
+        ttk.Label(main_frame, text="Start at Login:").grid(
+            row=row, column=0, sticky=tk.W, pady=8
+        )
+        autostart_var = tk.BooleanVar(value=self.config.is_autostart_enabled())
+        autostart_check = ttk.Checkbutton(
+            main_frame,
+            text="Start VoiceControl automatically when I log in",
+            variable=autostart_var
+        )
+        autostart_check.grid(row=row, column=1, sticky=tk.W, pady=8, padx=(15, 0))
+        self.entry_widgets['autostart_enabled'] = autostart_var
 
         # Note about restart
         row += 1
@@ -218,6 +234,28 @@ class SettingsWindow:
             current_config['audio_feedback_enabled'] = self.entry_widgets['audio_feedback_enabled'].get()
             current_config['keyboard_shortcut'] = self.entry_widgets['keyboard_shortcut'].get()
 
+            # Handle autostart configuration
+            autostart_enabled = self.entry_widgets['autostart_enabled'].get()
+            old_autostart_enabled = self.config.is_autostart_enabled()
+            current_config['autostart_enabled'] = autostart_enabled
+
+            # Create or remove autostart file if setting changed
+            if autostart_enabled != old_autostart_enabled:
+                if autostart_enabled:
+                    if not self._create_autostart_file():
+                        messagebox.showwarning(
+                            "Autostart Warning",
+                            "Settings saved, but failed to create autostart file.\n"
+                            "You may need to configure autostart manually."
+                        )
+                else:
+                    if not self._remove_autostart_file():
+                        messagebox.showwarning(
+                            "Autostart Warning",
+                            "Settings saved, but failed to remove autostart file.\n"
+                            "You may need to remove it manually from ~/.config/autostart/"
+                        )
+
             # Save to file
             with open(config_path, 'w') as f:
                 json.dump(current_config, f, indent=2)
@@ -244,6 +282,73 @@ class SettingsWindow:
         if self.window:
             self.window.destroy()
             self.window = None
+
+    def _get_autostart_path(self):
+        """Get the path to the autostart desktop file.
+
+        Returns:
+            Path object for ~/.config/autostart/voice-ctrl.desktop
+        """
+        return Path.home() / ".config" / "autostart" / "voice-ctrl.desktop"
+
+    def _get_executable_path(self):
+        """Get the path to the voice-ctrl executable.
+
+        Returns:
+            Path to voice-ctrl command (checks /usr/bin first, falls back to python -m)
+        """
+        # Check if installed via .deb package
+        usr_bin_path = Path("/usr/bin/voice-ctrl")
+        if usr_bin_path.exists():
+            return str(usr_bin_path)
+
+        # Fallback to running from source with absolute path
+        project_root = Path(__file__).parent.parent
+        return f"bash -c 'cd {project_root} && python3 -m src.main'"
+
+    def _create_autostart_file(self):
+        """Create the autostart desktop file."""
+        try:
+            autostart_path = self._get_autostart_path()
+            executable = self._get_executable_path()
+
+            # Ensure autostart directory exists
+            autostart_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Create desktop file content
+            desktop_content = f"""[Desktop Entry]
+Type=Application
+Name=VoiceControl
+Comment=System-wide voice dictation tool
+Exec={executable}
+Icon=voice-ctrl
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
+Categories=Utility;Accessibility;
+"""
+
+            # Write desktop file
+            with open(autostart_path, 'w') as f:
+                f.write(desktop_content)
+
+            print(f"Autostart file created at: {autostart_path}")
+            return True
+        except Exception as e:
+            print(f"Failed to create autostart file: {e}")
+            return False
+
+    def _remove_autostart_file(self):
+        """Remove the autostart desktop file."""
+        try:
+            autostart_path = self._get_autostart_path()
+            if autostart_path.exists():
+                autostart_path.unlink()
+                print(f"Autostart file removed: {autostart_path}")
+            return True
+        except Exception as e:
+            print(f"Failed to remove autostart file: {e}")
+            return False
 
 
 def show_about_dialog():
