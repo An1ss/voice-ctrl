@@ -8,18 +8,20 @@ import time
 from pathlib import Path
 from datetime import datetime
 from .notifier import Notifier
+from .audio_feedback import AudioFeedback
 
 
 class AudioRecorder:
     """Records audio from microphone with toggle start/stop behavior."""
 
-    def __init__(self, sample_rate=16000, channels=1, max_duration=240):
+    def __init__(self, sample_rate=16000, channels=1, max_duration=240, audio_feedback_enabled=True):
         """Initialize the audio recorder.
 
         Args:
             sample_rate: Sample rate in Hz (default 16000 for Whisper compatibility)
             channels: Number of audio channels (1 for mono, 2 for stereo)
             max_duration: Maximum recording duration in seconds (default 240)
+            audio_feedback_enabled: Whether to play beeps on start/stop (default True)
         """
         self.sample_rate = sample_rate
         self.channels = channels
@@ -29,6 +31,7 @@ class AudioRecorder:
         self.recording_thread = None
         self.start_time = None
         self.notifier = Notifier()
+        self.audio_feedback = AudioFeedback(enabled=audio_feedback_enabled)
 
     def start_recording(self):
         """Start audio recording in a separate thread."""
@@ -39,6 +42,9 @@ class AudioRecorder:
         self.is_recording = True
         self.audio_data = []
         self.start_time = time.time()
+
+        # Play start beep
+        self.audio_feedback.play_start_beep()
 
         # Start recording in a separate thread to avoid blocking
         self.recording_thread = threading.Thread(target=self._record)
@@ -57,6 +63,9 @@ class AudioRecorder:
         # Wait for recording thread to finish
         if self.recording_thread:
             self.recording_thread.join()
+
+        # Play stop beep
+        self.audio_feedback.play_stop_beep()
 
         duration = time.time() - self.start_time
         print(f"Recording stopped. Duration: {duration:.2f}s")

@@ -18,7 +18,10 @@ def main():
     config = Config()
 
     # Initialize components with config settings
-    recorder = AudioRecorder(max_duration=config.get_max_duration())
+    recorder = AudioRecorder(
+        max_duration=config.get_max_duration(),
+        audio_feedback_enabled=config.is_audio_feedback_enabled()
+    )
     transcriber = WhisperTranscriber(config=config)
     paster = TextPaster(restore_clipboard=True)
     tray_icon = TrayIcon()
