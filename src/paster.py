@@ -6,14 +6,14 @@ from pynput.keyboard import Controller, Key
 
 
 class TextPaster:
-    """Pastes text at cursor position using clipboard and Ctrl+V simulation."""
+    """Pastes text at cursor position using clipboard and Shift+Insert simulation."""
 
     def __init__(self, restore_clipboard=True, paste_delay=0.1):
         """Initialize the text paster.
 
         Args:
             restore_clipboard: Whether to restore previous clipboard contents after pasting
-            paste_delay: Delay in seconds between clipboard copy and Ctrl+V (default 0.1)
+            paste_delay: Delay in seconds between clipboard copy and Shift+Insert (default 0.1)
         """
         self.restore_clipboard = restore_clipboard
         self.paste_delay = paste_delay
@@ -50,12 +50,12 @@ class TextPaster:
             # Wait for clipboard to be ready
             time.sleep(self.paste_delay)
 
-            # Simulate Ctrl+V keystroke
-            with self.keyboard.pressed(Key.ctrl):
-                self.keyboard.press('v')
-                self.keyboard.release('v')
+            # Simulate Shift+Insert keystroke
+            with self.keyboard.pressed(Key.shift):
+                self.keyboard.press(Key.insert)
+                self.keyboard.release(Key.insert)
 
-            print("Simulated Ctrl+V keystroke")
+            print("Simulated Shift+Insert keystroke")
 
             # Optional: wait a bit before restoring clipboard to ensure paste completes
             if self.restore_clipboard and previous_clipboard is not None:
