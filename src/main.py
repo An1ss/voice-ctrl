@@ -165,6 +165,28 @@ def main():
     # Start system tray icon
     tray_icon.start()
 
+    def process_audio_file(audio_file):
+        """Process an audio file by transcribing and pasting.
+
+        Args:
+            audio_file: Path to the audio file to process
+        """
+        print("Processing audio...")
+        transcribed_text = transcriber.transcribe(audio_file)
+
+        if transcribed_text:
+            print("Pasting transcribed text...")
+            paster.paste_text(transcribed_text)
+        else:
+            print("No transcription result to paste")
+
+        # Update tray icon to idle state after processing
+        tray_icon.set_recording_state(False)
+
+    def on_auto_stop(audio_file):
+        """Callback for when recording auto-stops at max duration."""
+        process_audio_file(audio_file)
+
     def on_hotkey():
         """Callback function when hotkey is pressed."""
         audio_file = recorder.toggle_recording()
@@ -174,14 +196,10 @@ def main():
 
         # If recording just stopped, transcribe and paste
         if audio_file:
-            print("Processing audio...")
-            transcribed_text = transcriber.transcribe(audio_file)
+            process_audio_file(audio_file)
 
-            if transcribed_text:
-                print("Pasting transcribed text...")
-                paster.paste_text(transcribed_text)
-            else:
-                print("No transcription result to paste")
+    # Set up auto-stop callback
+    recorder.set_auto_stop_callback(on_auto_stop)
 
     # Set up global hotkey listener with parsed shortcut
     # Using GlobalHotKeys for cross-platform global hotkey support

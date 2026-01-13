@@ -32,6 +32,7 @@ class AudioRecorder:
         self.start_time = None
         self.notifier = Notifier()
         self.audio_feedback = AudioFeedback(enabled=audio_feedback_enabled)
+        self.on_auto_stop_callback = None  # Callback for auto-stop events
 
     def start_recording(self):
         """Start audio recording in a separate thread."""
@@ -81,6 +82,40 @@ class AudioRecorder:
             self.start_recording()
             return None
 
+    def set_auto_stop_callback(self, callback):
+        """Set callback function to be called when recording auto-stops.
+
+        Args:
+            callback: Function that takes audio_file path as argument
+        """
+        self.on_auto_stop_callback = callback
+
+    def _handle_auto_stop(self):
+        """Handle auto-stop by performing same actions as manual stop."""
+        # Wait for recording thread to finish
+        if self.recording_thread:
+            self.recording_thread.join()
+
+        # Play stop beep
+        self.audio_feedback.play_stop_beep()
+
+        duration = time.time() - self.start_time
+        print(f"Recording auto-stopped. Duration: {duration:.2f}s")
+
+        # Save to WAV file
+        audio_file = self._save_to_wav()
+
+        # Notify user that auto-stop occurred
+        if audio_file:
+            self.notifier.notify_error(
+                "Recording Auto-Stopped",
+                f"Maximum duration ({self.max_duration}s) reached. Transcribing..."
+            )
+
+        # Invoke callback to trigger transcription
+        if self.on_auto_stop_callback and audio_file:
+            self.on_auto_stop_callback(audio_file)
+
     def _record(self):
         """Internal method to record audio (runs in separate thread)."""
         def callback(indata, frames, time_info, status):
@@ -102,9 +137,11 @@ class AudioRecorder:
                     elapsed = time.time() - self.start_time
 
                 # Auto-stop if max duration reached
-                if elapsed >= self.max_duration:
+                if elapsed >= self.max_duration and self.is_recording:
                     print(f"Maximum duration ({self.max_duration}s) reached. Auto-stopping...")
                     self.is_recording = False
+                    # Trigger auto-stop processing in a separate thread
+                    threading.Thread(target=self._handle_auto_stop, daemon=True).start()
 
         except Exception as e:
             print(f"Error during recording: {e}")
