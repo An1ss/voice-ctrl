@@ -98,7 +98,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 
 ### Phase 2: Configuration & Polish
 
-#### US-008: Load settings from config file [BACKLOG]
+#### US-008: Load settings from config file
 **Description:** As a user, I want to customize app behavior through a config file so I can adjust it to my preferences.
 
 **Acceptance Criteria:**
@@ -118,7 +118,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 }
 ```
 
-#### US-009: Add audio feedback (beeps) [BACKLOG]
+#### US-009: Add audio feedback (beeps)
 **Description:** As a user, I want to hear beeps when recording starts/stops so I have confirmation without looking at the screen.
 
 **Acceptance Criteria:**
@@ -128,7 +128,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - [ ] Beeps are short, non-intrusive system sounds
 - [ ] Works even if system volume is low (reasonable volume)
 
-#### US-010: Make keyboard shortcut configurable [BACKLOG]
+#### US-010: Make keyboard shortcut configurable
 **Description:** As a user, I want to change the keyboard shortcut so it doesn't conflict with other apps.
 
 **Acceptance Criteria:**
@@ -139,7 +139,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 
 ### Phase 3: GUI Settings (Future)
 
-#### US-011: Add settings window from tray icon [BACKLOG]
+#### US-011: Add settings window from tray icon
 **Description:** As a user, I want to click the tray icon and open a settings window so I can adjust preferences without editing JSON.
 
 **Acceptance Criteria:**
@@ -149,7 +149,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - [ ] Settings window has "Test Recording" button to verify setup
 - [ ] Verify in browser using dev-browser skill (if web-based) OR manual verification
 
-#### US-012: API key setup wizard [BACKLOG]
+#### US-012: API key setup wizard
 **Description:** As a new user, I want a guided setup on first launch so I can easily configure the app.
 
 **Acceptance Criteria:**

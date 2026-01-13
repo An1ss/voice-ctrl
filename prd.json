@@ -113,7 +113,7 @@
     {
       "id": "US-007",
       "title": "Use Shift+Insert for pasting instead of Ctrl+V",
-      "description": "Change paste mechanism to use Shift+Insert for better command-line tool compatibility.\n\n**What to do:**\n- Modify src/paster.py to simulate Shift+Insert instead of Ctrl+V\n- Update keyboard simulation to press Shift+Insert keys\n- Test with various command-line tools: bash, zsh, vim, nano, tmux\n- Test with GUI applications to ensure compatibility: Firefox, VS Code, gedit, LibreOffice\n\n**Implementation notes:**\n- Shift+Insert is the standard paste shortcut in terminals and most Linux applications\n- Ctrl+V may be intercepted by terminal emulators for other functions\n- Both shortcuts should work in most GUI applications, but Shift+Insert has better terminal support",
+      "description": "As a user, I want text to paste using Shift+Insert so it works properly in command-line tools and terminals.",
       "acceptanceCriteria": [
         "Shift+Insert keystroke simulated instead of Ctrl+V",
         "Text pastes successfully in terminal applications: bash, zsh, gnome-terminal",
@@ -125,8 +125,87 @@
       ],
       "priority": 7,
       "passes": false,
-      "notes": "Shift+Insert is more universal across terminal and GUI applications on Linux",
-      "scope": "current"
+      "scope": "current",
+      "notes": "- Shift+Insert is the standard paste shortcut in terminals and most Linux applications\n- Ctrl+V may be intercepted by terminal emulators for other functions (e.g., in vim it's visual block mode)\n- Both shortcuts work in most GUI applications, but Shift+Insert has better terminal support"
+    },
+    {
+      "id": "US-008",
+      "title": "Load settings from config file",
+      "description": "As a user, I want to customize app behavior through a config file so I can adjust it to my preferences.",
+      "acceptanceCriteria": [
+        "Config file created at `~/.config/voice-ctrl/config.json` on first run",
+        "Default config includes: `api_key`, `max_duration_seconds`, `audio_feedback_enabled`",
+        "Settings loaded at startup and applied",
+        "Invalid config shows error notification with details",
+        "Example config file documented in README"
+      ],
+      "priority": 8,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add audio feedback (beeps)",
+      "description": "As a user, I want to hear beeps when recording starts/stops so I have confirmation without looking at the screen.",
+      "acceptanceCriteria": [
+        "Play start beep when recording begins",
+        "Play stop beep when recording ends",
+        "Audio feedback respects `audio_feedback_enabled` config setting",
+        "Beeps are short, non-intrusive system sounds",
+        "Works even if system volume is low (reasonable volume)"
+      ],
+      "priority": 9,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Make keyboard shortcut configurable",
+      "description": "As a user, I want to change the keyboard shortcut so it doesn't conflict with other apps.",
+      "acceptanceCriteria": [
+        "`keyboard_shortcut` setting in config file (e.g., \"Ctrl+Shift+Space\")",
+        "App parses shortcut string and registers it on startup",
+        "Invalid shortcut shows error with valid format examples",
+        "Changing config requires app restart (document this limitation)"
+      ],
+      "priority": 10,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Add settings window from tray icon",
+      "description": "As a user, I want to click the tray icon and open a settings window so I can adjust preferences without editing JSON.",
+      "acceptanceCriteria": [
+        "Right-click tray icon shows menu: \"Settings\", \"About\", \"Quit\"",
+        "Settings window shows all configurable options with UI controls",
+        "Changes saved to config file immediately",
+        "Settings window has \"Test Recording\" button to verify setup",
+        "Verify in browser using dev-browser skill (if web-based) OR manual verification"
+      ],
+      "priority": 11,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "API key setup wizard",
+      "description": "As a new user, I want a guided setup on first launch so I can easily configure the app.",
+      "acceptanceCriteria": [
+        "First launch detects missing/invalid API key",
+        "Shows setup dialog requesting OpenAI API key",
+        "\"Get API Key\" button opens https://platform.openai.com/api-keys",
+        "Validates API key by making test request",
+        "Saves valid key to config file"
+      ],
+      "priority": 12,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
     }
   ]
 }
