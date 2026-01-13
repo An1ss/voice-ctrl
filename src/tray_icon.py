@@ -1,7 +1,7 @@
 """System tray icon module for VoiceControl application."""
 
 import pystray
-from pystray import MenuItem as Item
+from pystray import MenuItem as Item, Menu
 from PIL import Image, ImageDraw
 import threading
 
@@ -104,9 +104,9 @@ class TrayIcon:
 
             return items
 
-        # Return the callable for dynamic menu generation
+        # Return Menu object wrapping the callable for dynamic menu generation
         # This ensures menu works properly on Linux with AppIndicator
-        return menu_builder if (self.on_settings or self.on_about or self.on_quit) else None
+        return Menu(menu_builder) if (self.on_settings or self.on_about or self.on_quit) else None
 
     def _handle_settings(self, icon, item):
         """Handle Settings menu click."""
