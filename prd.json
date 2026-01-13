@@ -303,6 +303,64 @@
       "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - xclip timeout of 1.0s is too short, causing warnings"
+    },
+    {
+      "id": "US-019",
+      "title": "Transcription history log",
+      "description": "As a user, I want to access a history of my recent transcriptions so I can retrieve text from previous recordings if needed.\n\n**What to implement:**\n- Create history storage in ~/.config/voice-ctrl/history.json\n- Store last 30 transcriptions with timestamp, audio duration, and transcribed text\n- Each entry includes: timestamp (ISO format), text, duration_seconds\n- Automatically trim to 30 most recent entries when adding new transcription\n- Add \"View History\" option to tray icon menu\n- Create history viewer window showing recent transcriptions in a scrollable list\n- Allow copying individual transcriptions to clipboard\n- Display transcription timestamp and duration for each entry",
+      "acceptanceCriteria": [
+        "History stored in ~/.config/voice-ctrl/history.json with last 30 transcriptions",
+        "Each entry has timestamp, text, and duration",
+        "Tray menu has \"View History\" option",
+        "History window shows scrollable list of recent transcriptions",
+        "Can copy individual transcriptions to clipboard from history",
+        "Timestamps are human-readable (e.g., \"2026-01-13 14:30:25\")",
+        "History automatically trims to 30 entries (oldest removed)",
+        "Manual test: Record 3 transcriptions, verify they appear in history with correct data"
+      ],
+      "priority": 19,
+      "passes": false,
+      "scope": "next",
+      "notes": "Nice-to-have feature for retrieving previous transcriptions"
+    },
+    {
+      "id": "US-020",
+      "title": "Create .deb package for easy installation",
+      "description": "As a user, I want to install VoiceControl with a .deb package so I don't need to manually set up dependencies and configuration.\n\n**What to implement:**\n- Create Debian package structure (DEBIAN/control, postinst, prerm, etc.)\n- Package installs to /opt/voice-ctrl\n- Include all Python dependencies or document system requirements\n- Post-install script sets up virtual environment with --system-site-packages\n- Create /usr/bin/voice-ctrl launcher script\n- Include .desktop file in /usr/share/applications for application menu\n- Desktop file has proper icon, name, and categories\n- Package depends on: python3, python3-venv, portaudio19-dev, xclip, python3-tk, python3-gi, python3-gi-cairo, gir1.2-gtk-3.0\n- Create build script to generate .deb package\n- Test installation on clean Ubuntu system",
+      "acceptanceCriteria": [
+        "voice-ctrl.deb package can be installed with: sudo dpkg -i voice-ctrl.deb",
+        "Installation automatically handles system dependencies",
+        "Can launch from application menu (shows in launcher)",
+        "Can run from terminal: voice-ctrl",
+        "Application icon appears in system tray after launch",
+        "Config directory ~/.config/voice-ctrl created on first run",
+        "Setup wizard appears on first launch if no API key",
+        "Can uninstall cleanly with: sudo apt remove voice-ctrl",
+        "Manual test: Install on fresh Ubuntu VM, launch from app menu, verify it works"
+      ],
+      "priority": 20,
+      "passes": false,
+      "scope": "next",
+      "notes": "High priority - makes installation much easier for end users"
+    },
+    {
+      "id": "US-021",
+      "title": "Add desktop autostart support",
+      "description": "As a user, I want VoiceControl to automatically start when I log in so I don't have to manually launch it every time.\n\n**What to implement:**\n- Add \"Start at Login\" checkbox to Settings window\n- Store autostart preference in config file\n- Create/remove ~/.config/autostart/voice-ctrl.desktop based on setting\n- Autostart desktop file should have Hidden=false and X-GNOME-Autostart-enabled=true\n- Ensure application starts in background (no terminal window)\n- Show notification on startup when running from autostart\n- Test that autostart works after system reboot",
+      "acceptanceCriteria": [
+        "Settings window has \"Start at Login\" checkbox",
+        "Enabling checkbox creates ~/.config/autostart/voice-ctrl.desktop",
+        "Disabling checkbox removes autostart file",
+        "Application starts automatically after login when enabled",
+        "No terminal window appears during autostart",
+        "Tray icon appears after autostart",
+        "Desktop notification shown: \"VoiceControl started\" (optional)",
+        "Manual test: Enable autostart, reboot, verify app starts automatically"
+      ],
+      "priority": 21,
+      "passes": false,
+      "scope": "next",
+      "notes": "Nice-to-have for better user experience, goes well with .deb packaging"
     }
   ]
 }
