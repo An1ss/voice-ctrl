@@ -1,5 +1,6 @@
 """Main entry point for VoiceControl application."""
 
+import sys
 from pynput import keyboard
 from .config import Config
 from .recorder import AudioRecorder
@@ -8,14 +9,108 @@ from .paster import TextPaster
 from .tray_icon import TrayIcon
 
 
+def parse_keyboard_shortcut(shortcut_str):
+    """Parse a keyboard shortcut string into pynput format.
+
+    Args:
+        shortcut_str: String like "Ctrl+Shift+Space" or "Alt+F1"
+
+    Returns:
+        String in pynput format like "<ctrl>+<shift>+<space>" or None if invalid
+
+    Examples:
+        "Ctrl+Shift+Space" -> "<ctrl>+<shift>+<space>"
+        "Alt+F1" -> "<alt>+<f1>"
+        "Ctrl+A" -> "<ctrl>+a"
+    """
+    if not shortcut_str or not isinstance(shortcut_str, str):
+        return None
+
+    # Map of common key names to pynput format
+    key_map = {
+        "ctrl": "<ctrl>",
+        "shift": "<shift>",
+        "alt": "<alt>",
+        "cmd": "<cmd>",
+        "space": "<space>",
+        "enter": "<enter>",
+        "tab": "<tab>",
+        "backspace": "<backspace>",
+        "delete": "<delete>",
+        "esc": "<esc>",
+        "up": "<up>",
+        "down": "<down>",
+        "left": "<left>",
+        "right": "<right>",
+        "home": "<home>",
+        "end": "<end>",
+        "page_up": "<page_up>",
+        "page_down": "<page_down>",
+        "insert": "<insert>",
+    }
+
+    # Add function keys F1-F12
+    for i in range(1, 13):
+        key_map[f"f{i}"] = f"<f{i}>"
+
+    try:
+        # Split the shortcut by + and process each part
+        parts = shortcut_str.split("+")
+        if len(parts) < 2:
+            return None  # Need at least modifier + key
+
+        parsed_parts = []
+        for part in parts:
+            part_lower = part.strip().lower()
+
+            # Check if it's a known modifier/special key
+            if part_lower in key_map:
+                parsed_parts.append(key_map[part_lower])
+            # Single character keys (a-z, 0-9, etc.) stay lowercase
+            elif len(part.strip()) == 1:
+                parsed_parts.append(part.strip().lower())
+            else:
+                # Unknown key format
+                return None
+
+        return "+".join(parsed_parts)
+
+    except Exception:
+        return None
+
+
 def main():
     """Main function to run the voice control application."""
     print("VoiceControl started!")
-    print("Press Ctrl+Shift+Space to start/stop recording")
-    print("Press Ctrl+C to exit\n")
 
     # Load configuration
     config = Config()
+
+    # Get keyboard shortcut from config
+    shortcut_str = config.get_keyboard_shortcut()
+    parsed_shortcut = parse_keyboard_shortcut(shortcut_str)
+
+    # Validate keyboard shortcut
+    if not parsed_shortcut:
+        error_msg = (
+            f"Invalid keyboard shortcut: '{shortcut_str}'\n"
+            "Valid format examples:\n"
+            "  - Ctrl+Shift+Space\n"
+            "  - Alt+F1\n"
+            "  - Ctrl+Alt+R\n"
+            "  - Shift+Insert\n"
+            "\nPlease edit the config file at ~/.config/voice-ctrl/config.json\n"
+            "and restart the application."
+        )
+        print(f"ERROR: {error_msg}")
+        config.notifier.notify_error(
+            "Invalid Keyboard Shortcut",
+            f"'{shortcut_str}' is not valid. See console for examples."
+        )
+        sys.exit(1)
+
+    print(f"Keyboard shortcut: {shortcut_str}")
+    print("Press Ctrl+C to exit\n")
 
     # Initialize components with config settings
     recorder = AudioRecorder(
@@ -47,13 +142,22 @@ def main():
             else:
                 print("No transcription result to paste")
 
-    # Set up global hotkey listener
+    # Set up global hotkey listener with parsed shortcut
     # Using GlobalHotKeys for cross-platform global hotkey support
-    hotkey = keyboard.GlobalHotKeys({
-        '<ctrl>+<shift>+<space>': on_hotkey
-    })
-
-    hotkey.start()
+    try:
+        hotkey = keyboard.GlobalHotKeys({
+            parsed_shortcut: on_hotkey
+        })
+        hotkey.start()
+    except Exception as e:
+        error_msg = f"Failed to register keyboard shortcut '{shortcut_str}': {e}"
+        print(f"ERROR: {error_msg}")
+        config.notifier.notify_error(
+            "Shortcut Registration Failed",
+            f"Could not register '{shortcut_str}'. Try a different shortcut."
+        )
+        tray_icon.stop()
+        sys.exit(1)
 
     try:
         # Keep the application running

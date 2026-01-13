@@ -8,7 +8,7 @@ VoiceControl is a voice-to-text application that enables hands-free typing acros
 
 ## Features
 
-- Global keyboard shortcut for voice recording (Ctrl+Shift+Space)
+- Configurable global keyboard shortcut for voice recording (default: Ctrl+Shift+Space)
 - Real-time transcription using OpenAI Whisper API
 - Automatic text insertion at cursor position
 - System tray icon with status indicators
@@ -65,7 +65,8 @@ Edit the configuration file with your settings:
 {
   "api_key": "your-openai-api-key-here",
   "max_duration_seconds": 240,
-  "audio_feedback_enabled": true
+  "audio_feedback_enabled": true,
+  "keyboard_shortcut": "Ctrl+Shift+Space"
 }
 ```
 
@@ -74,6 +75,10 @@ Edit the configuration file with your settings:
 - `api_key` (string): Your OpenAI API key (required for transcription)
 - `max_duration_seconds` (number): Maximum recording duration in seconds (default: 240)
 - `audio_feedback_enabled` (boolean): Enable audio beeps for recording feedback (default: true)
+- `keyboard_shortcut` (string): Keyboard shortcut for recording (default: "Ctrl+Shift+Space")
+  - Valid formats: "Ctrl+Shift+Space", "Alt+F1", "Ctrl+Alt+R", "Shift+Insert"
+  - Requires at least one modifier key (Ctrl, Alt, Shift) plus another key
+  - Changing this setting requires restarting the application
 
 ### 6. Run the application
 
@@ -85,10 +90,12 @@ python -m src.main
 
 1. Start the application
 2. Look for the system tray icon (microphone)
-3. Press **Ctrl+Shift+Space** to start recording
+3. Press your configured keyboard shortcut (default: **Ctrl+Shift+Space**) to start recording
 4. Speak your text
-5. Press **Ctrl+Shift+Space** again to stop and transcribe
+5. Press the shortcut again to stop and transcribe
 6. The text will be automatically inserted at your cursor position
+
+**Note:** If the keyboard shortcut conflicts with another application, you can change it in the config file at `~/.config/voice-ctrl/config.json` and restart the application.
 
 ## Project Structure
 

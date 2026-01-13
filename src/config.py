@@ -13,7 +13,8 @@ class Config:
     DEFAULT_CONFIG = {
         "api_key": "",
         "max_duration_seconds": 240,
-        "audio_feedback_enabled": True
+        "audio_feedback_enabled": True,
+        "keyboard_shortcut": "Ctrl+Shift+Space"
     }
 
     def __init__(self, config_path=None, log_path=None):
@@ -147,6 +148,10 @@ class Config:
         if "audio_feedback_enabled" in config and not isinstance(config["audio_feedback_enabled"], bool):
             return False
 
+        # Check that keyboard_shortcut is a string
+        if "keyboard_shortcut" in config and not isinstance(config["keyboard_shortcut"], str):
+            return False
+
         return True
 
     def get(self, key, default=None):
@@ -184,3 +189,11 @@ class Config:
             True if enabled, False otherwise
         """
         return self.settings.get("audio_feedback_enabled", True)
+
+    def get_keyboard_shortcut(self):
+        """Get the keyboard shortcut from config.
+
+        Returns:
+            Keyboard shortcut string (default "Ctrl+Shift+Space")
+        """
+        return self.settings.get("keyboard_shortcut", "Ctrl+Shift+Space")
