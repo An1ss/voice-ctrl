@@ -131,10 +131,11 @@ class TrayIcon:
         menu = self._create_menu()
 
         # Create icon with idle state and menu
+        # Note: title parameter sets the tooltip text shown on hover
         self.icon = pystray.Icon(
-            "voice_control",
-            self.idle_icon,
-            self.tooltip,
+            name="voice_control",
+            icon=self.idle_icon,
+            title=self.tooltip,
             menu=menu
         )
 
