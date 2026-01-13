@@ -319,7 +319,7 @@
         "Manual test: Record 3 transcriptions, verify they appear in history with correct data"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Nice-to-have feature for retrieving previous transcriptions"
     },
@@ -339,7 +339,7 @@
         "Manual test: Install on fresh Ubuntu VM, launch from app menu, verify it works"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "High priority - makes installation much easier for end users"
     },
@@ -358,7 +358,7 @@
         "Manual test: Enable autostart, reboot, verify app starts automatically"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Nice-to-have for better user experience, goes well with .deb packaging"
     }

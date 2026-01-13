@@ -590,3 +590,153 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-019 - Transcription history log
+**Implemented:**
+- Created src/history.py with HistoryManager class for transcription storage
+- History stored in ~/.config/voice-ctrl/history.json with last 30 transcriptions
+- Each entry includes: timestamp (ISO format YYYY-MM-DD HH:MM:SS), text, duration_seconds
+- Automatic trimming to 30 most recent entries when adding new transcription
+- Created src/history_window.py with HistoryWindow GUI for viewing history
+- Scrollable list showing recent transcriptions with timestamp, duration, and full text
+- "Copy to Clipboard" button for each entry using pyperclip
+- "Clear History" button with confirmation dialog
+- Added "View History" menu item to tray icon (appears first in menu list)
+- Integrated history logging into main.py workflow after successful transcription
+- Duration tracking from recorder.start_time for accurate recording length
+
+**Files changed:**
+- src/history.py (created - 160 lines)
+- src/history_window.py (created - 265 lines)
+- src/main.py (updated - added HistoryManager import, history logging in process_audio_file)
+- src/tray_icon.py (updated - added on_view_history callback and menu item)
+- test_history.py (created - test script)
+
+**Learnings:**
+- History management should be a separate module for clean separation of concerns
+- JSON format for history file makes it human-readable and easy to inspect/debug
+- List with newest entries first (insert at index 0) provides natural ordering for display
+- Trimming to max entries during add prevents file from growing unboundedly
+- Validation of entry structure on load handles corrupted/invalid history files gracefully
+- Duration must be captured from recorder.start_time before toggle_recording completes
+- process_audio_file modified to accept optional duration_seconds parameter
+- Both manual stop (on_hotkey) and auto-stop (on_auto_stop) need duration tracking
+- tkinter Text widget with state="disabled" provides read-only text display with proper formatting
+- Canvas + Scrollbar pattern for scrollable frame allows unlimited history entries
+- Clear History should show confirmation dialog (askyesno) to prevent accidental data loss
+- Window reopen after clear shows empty state message for better UX
+- History window can be reopened multiple times - use lift() and focus_force() if already open
+- Menu item order matters: View History first, then Settings, About, Quit for logical grouping
+- pyperclip integration for copy buttons reuses existing clipboard dependency
+- Test script validates: entry count, field structure, order (newest first), trimming behavior
+- MAX_ENTRIES constant (30) makes limit configurable and self-documenting
+- ISO format timestamps (YYYY-MM-DD HH:MM:SS) are both human-readable and sortable
+- HistoryManager logger uses standard logging module for consistency with other components
+- Empty state in UI ("No transcription history yet") improves first-run experience
+- Threading pattern for menu callbacks (daemon=True) consistent with other menu items
+- History file location in ~/.config/voice-ctrl/ follows Linux config conventions
+
+---
+
+## US-020 - Create .deb package for easy installation
+**Implemented:**
+- Created complete Debian package structure in packaging/ directory
+- DEBIAN/control file with package metadata, version 1.0.0, and all system dependencies
+- DEBIAN/postinst script that creates virtual environment with --system-site-packages flag
+- DEBIAN/prerm script for clean uninstallation (removes autostart file)
+- Launcher script at /usr/bin/voice-ctrl that activates venv and runs application
+- Desktop file at /usr/share/applications/voice-ctrl.desktop for application menu
+- Application icon (48x48 PNG) at /usr/share/pixmaps/voice-ctrl.png
+- Build script (build_deb.sh) that packages everything into voice-ctrl.deb
+- Package installs application to /opt/voice-ctrl
+
+**Files changed:**
+- packaging/voice-ctrl/DEBIAN/control (created - package metadata)
+- packaging/voice-ctrl/DEBIAN/postinst (created - venv setup script)
+- packaging/voice-ctrl/DEBIAN/prerm (created - cleanup script)
+- packaging/voice-ctrl/usr/bin/voice-ctrl (created - launcher script)
+- packaging/voice-ctrl/usr/share/applications/voice-ctrl.desktop (created)
+- packaging/voice-ctrl/usr/share/pixmaps/voice-ctrl.png (created - icon)
+- build_deb.sh (created - build automation)
+- packaging/README.md (created - documentation)
+- PACKAGE_TESTING.md (created - testing guide)
+- .gitignore (updated - exclude *.deb and packaging/voice-ctrl/opt/)
+
+**Learnings:**
+- Debian package structure requires DEBIAN/ directory with control, postinst, prerm scripts
+- control file format: Package, Version, Section, Priority, Architecture, Depends, Maintainer, Description
+- Dependencies list system packages (python3-gi, etc.) not pip packages
+- Depends field uses comma-separated list with version constraints: python3 (>= 3.8)
+- postinst script runs after package extraction, perfect for venv setup
+- Virtual environment MUST use --system-site-packages to access PyGObject (python3-gi)
+- PyGObject cannot be pip-installed, only available as system package
+- prerm script runs before package removal, good for cleanup
+- Scripts in DEBIAN/ must be executable (chmod 755)
+- Application files typically go in /opt/ for third-party software
+- Launcher script goes in /usr/bin/ and must be executable
+- Desktop files go in /usr/share/applications/ for app menu integration
+- Desktop file format: [Desktop Entry] with Name, Comment, Exec, Icon, Terminal, Type, Categories
+- Icons go in /usr/share/pixmaps/ (or /usr/share/icons/ for multiple sizes)
+- Icon in .desktop file references name without path or extension (Icon=voice-ctrl)
+- dpkg-deb --build creates the .deb package from directory structure
+- Package filename becomes directory-name.deb (packaging/voice-ctrl → voice-ctrl.deb)
+- Must remove __pycache__ directories before packaging (bloat + unnecessary)
+- Build script should clean previous build artifacts before creating package
+- .gitignore should exclude *.deb files and build artifacts (packaging/voice-ctrl/opt/)
+- Package size: ~20KB for source files (before venv creation in postinst)
+- dpkg-deb --info shows package metadata, --contents shows file listing
+- Installation: sudo dpkg -i package.deb, then sudo apt-get install -f for dependencies
+- Uninstall: sudo apt remove package-name (preserves user config)
+- Purge: sudo apt purge package-name (removes config too)
+- User config in ~/.config/ should NOT be removed during package removal
+- postinst activates venv and runs pip install to set up Python dependencies
+- Launcher script cd to /opt/voice-ctrl, activates venv, runs python3 -m src.main
+- Desktop file Categories should match freedesktop.org spec (Utility;Accessibility;)
+- StartupNotify=false prevents "loading" cursor since app is background service
+- Terminal=false prevents terminal window from opening
+- PIL can create simple icons programmatically (no need for external icon files)
+- 48x48 is standard size for application icons in system menus
+- Package provides clean, user-friendly installation experience vs manual setup
+
+---
+
+## US-021 - Add desktop autostart support
+**Implemented:**
+- Added autostart_enabled parameter to config.py DEFAULT_CONFIG (defaults to false)
+- Added is_autostart_enabled() getter method to Config class
+- Added autostart_enabled validation in _validate_config() (checks boolean type)
+- Added "Start at Login" checkbox to Settings window
+- Implemented _create_autostart_file() method to create ~/.config/autostart/voice-ctrl.desktop
+- Implemented _remove_autostart_file() method to remove autostart file
+- Implemented _get_autostart_path() to get ~/.config/autostart/voice-ctrl.desktop path
+- Implemented _get_executable_path() to detect correct executable (installed vs source)
+- Autostart desktop file includes proper fields: Hidden=false, X-GNOME-Autostart-enabled=true
+- Settings window automatically creates/removes autostart file when checkbox toggled
+- Window height increased from 420px to 470px to accommodate new checkbox
+
+**Files changed:**
+- src/config.py (updated - added autostart_enabled to DEFAULT_CONFIG, validation, and getter)
+- src/settings_window.py (updated - added checkbox, autostart file management methods, imports)
+
+**Learnings:**
+- Autostart files on Linux go in ~/.config/autostart/ directory with .desktop extension
+- Desktop Entry format requires: Type, Name, Comment, Exec, Icon, Terminal, Hidden, X-GNOME-Autostart-enabled
+- Hidden=false is required for autostart (Hidden=true disables autostart)
+- X-GNOME-Autostart-enabled=true ensures GNOME Shell recognizes autostart setting
+- Terminal=false prevents terminal window from appearing on autostart
+- Exec path must be absolute or use bash -c wrapper to cd to project directory first
+- Executable path detection: check /usr/bin/voice-ctrl first (installed), fallback to source
+- For source execution: use "bash -c 'cd /absolute/path && python3 -m src.main'" pattern
+- Path(__file__).parent.parent gives project root from settings_window.py
+- Config migration automatically adds autostart_enabled to existing configs
+- Settings window save method compares old vs new autostart state to know when to create/remove file
+- Create autostart directory with Path.mkdir(parents=True, exist_ok=True) before writing file
+- Path.unlink() removes files, Path.exists() checks if file exists before removal
+- Error handling should be non-fatal with warnings (autostart is convenience feature)
+- Window height calculation: each row with pady=8 adds ~40px, account for all UI elements
+- BooleanVar used for checkbox state binding in tkinter
+- Config validation ensures autostart_enabled is boolean type (not string or int)
+- Testing: create file, verify content, remove file, verify removal all work correctly
+- Autostart works for both .deb installed version and running from source
+
+---
+
