@@ -1,6 +1,7 @@
 """System tray icon module for VoiceControl application."""
 
 import pystray
+from pystray import MenuItem as Item
 from PIL import Image, ImageDraw
 import threading
 
@@ -8,16 +9,22 @@ import threading
 class TrayIcon:
     """Manages system tray icon with state indicators."""
 
-    def __init__(self, tooltip="Voice Control"):
+    def __init__(self, tooltip="Voice Control", on_settings=None, on_about=None, on_quit=None):
         """Initialize the tray icon.
 
         Args:
             tooltip: Tooltip text shown on hover
+            on_settings: Callback function for Settings menu item
+            on_about: Callback function for About menu item
+            on_quit: Callback function for Quit menu item
         """
         self.tooltip = tooltip
         self.icon = None
         self.is_recording = False
         self.tray_thread = None
+        self.on_settings = on_settings
+        self.on_about = on_about
+        self.on_quit = on_quit
 
         # Generate icon images
         self.idle_icon = self._create_idle_icon()
@@ -73,17 +80,62 @@ class TrayIcon:
 
         return image
 
+    def _create_menu(self):
+        """Create the tray icon menu.
+
+        Returns:
+            pystray.Menu object
+        """
+        menu_items = []
+
+        # Settings menu item
+        if self.on_settings:
+            menu_items.append(Item("Settings", self._handle_settings))
+
+        # About menu item
+        if self.on_about:
+            menu_items.append(Item("About", self._handle_about))
+
+        # Quit menu item
+        if self.on_quit:
+            menu_items.append(Item("Quit", self._handle_quit))
+
+        return pystray.Menu(*menu_items) if menu_items else None
+
+    def _handle_settings(self, icon, item):
+        """Handle Settings menu click."""
+        if self.on_settings:
+            # Run in separate thread to avoid blocking the tray icon
+            threading.Thread(target=self.on_settings, daemon=True).start()
+
+    def _handle_about(self, icon, item):
+        """Handle About menu click."""
+        if self.on_about:
+            # Run in separate thread to avoid blocking the tray icon
+            threading.Thread(target=self.on_about, daemon=True).start()
+
+    def _handle_quit(self, icon, item):
+        """Handle Quit menu click."""
+        if self.on_quit:
+            self.on_quit()
+        # Stop the icon
+        icon.stop()
+
     def start(self):
         """Start the system tray icon in a separate thread."""
         if self.tray_thread and self.tray_thread.is_alive():
             print("Tray icon already running!")
             return
 
-        # Create icon with idle state
+        # Create menu
+        menu = self._create_menu()
+
+        # Create icon with idle state and menu
         self.icon = pystray.Icon(
             "voice_control",
             self.idle_icon,
-            self.tooltip
+            self.tooltip,
+            menu=menu
         )
 
         # Run icon in separate thread to avoid blocking

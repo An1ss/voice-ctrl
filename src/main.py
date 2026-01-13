@@ -7,6 +7,7 @@ from .recorder import AudioRecorder
 from .transcriber import WhisperTranscriber
 from .paster import TextPaster
 from .tray_icon import TrayIcon
+from .settings_window import SettingsWindow, show_about_dialog
 
 
 def parse_keyboard_shortcut(shortcut_str):
@@ -119,7 +120,30 @@ def main():
     )
     transcriber = WhisperTranscriber(config=config)
     paster = TextPaster(restore_clipboard=True)
-    tray_icon = TrayIcon()
+
+    # Define callback functions for tray menu
+    def on_settings():
+        """Show settings window."""
+        settings_window = SettingsWindow(config, recorder)
+        settings_window.show()
+
+    def on_about():
+        """Show about dialog."""
+        show_about_dialog()
+
+    def on_quit():
+        """Quit the application."""
+        print("\nQuitting VoiceControl...")
+        if recorder.is_recording:
+            recorder.stop_recording()
+        sys.exit(0)
+
+    # Initialize tray icon with menu callbacks
+    tray_icon = TrayIcon(
+        on_settings=on_settings,
+        on_about=on_about,
+        on_quit=on_quit
+    )
 
     # Start system tray icon
     tray_icon.start()

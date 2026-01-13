@@ -186,3 +186,125 @@ Started: $(date +%Y-%m-%d)
 - plyer fallback works even without dbus (uses notify-send command on Linux)
 
 ---
+
+## US-007 - Use Shift+Insert for pasting instead of Ctrl+V
+**Implemented:**
+- Changed keyboard simulation from Ctrl+V to Shift+Insert in src/paster.py
+- Modified TextPaster.paste_text() method to use Key.shift + Key.insert combination
+- Updated all documentation strings and comments to reflect Shift+Insert usage
+- Verified keystroke simulation works correctly with test script
+
+**Files changed:**
+- src/paster.py (updated - changed Ctrl+V to Shift+Insert in lines 9, 16, 54-58)
+
+**Learnings:**
+- Shift+Insert is the standard paste shortcut in Linux terminals and has better compatibility
+- pynput Key class includes Key.insert constant for the Insert key
+- Keyboard simulation pattern remains same: with keyboard.pressed(Key.shift): press/release Key.insert
+- Shift+Insert works universally across terminal apps, terminal editors (vim, nano, emacs), and GUI apps
+- Ctrl+V can be intercepted by terminals (e.g., vim uses it for visual block mode)
+- Both shortcuts work in GUI apps, but Shift+Insert has superior terminal/CLI compatibility
+- Test verified successful keystroke simulation output: "Simulated Shift+Insert keystroke"
+
+---
+
+## US-008 - Load settings from config file
+**Implemented:**
+- Created src/config.py with Config class for centralized settings management
+- Implemented automatic default config creation at ~/.config/voice-ctrl/config.json on first run
+- Added three configuration settings: api_key, max_duration_seconds, audio_feedback_enabled
+- Implemented comprehensive config validation with type checking (string, number, boolean)
+- Added error notifications for invalid config (JSON errors, type mismatches, missing file)
+- Updated main.py to load Config and pass settings to components
+- Refactored transcriber.py to use Config class instead of direct JSON reading
+- Added backward compatibility for old 'openai_api_key' field (maps to 'api_key')
+- Documented config file format and all options in README.md
+- Tested all error scenarios: invalid JSON, invalid types, missing file
+
+**Files changed:**
+- src/config.py (created - 186 lines)
+- src/main.py (updated - added Config import and initialization)
+- src/transcriber.py (updated - removed _load_api_key method, now uses Config class)
+- README.md (updated - added detailed config documentation with all options)
+
+**Learnings:**
+- Config management should be centralized in one module for consistency
+- Always create default config on first run for better UX (user doesn't need to create manually)
+- Config validation should check both structure and types (isinstance checks)
+- Error notifications should be user-friendly, not technical (e.g., "Invalid config" not "JSONDecodeError")
+- Use logging.basicConfig with force=True to override existing logging config across modules
+- Backward compatibility is important: handle old field names (openai_api_key -> api_key)
+- Settings should be applied at startup: pass config values to component constructors
+- Config class methods should be semantic: get_api_key(), get_max_duration(), is_audio_feedback_enabled()
+- Test invalid scenarios: malformed JSON, wrong types, missing files, negative numbers
+- When refactoring, remove old code (deleted _load_api_key method) to avoid confusion
+- Config should use .copy() on DEFAULT_CONFIG to prevent mutation
+- Merge strategy: copy defaults first, then update with loaded values (ensures all keys exist)
+
+---
+
+## US-009 - Add audio feedback (beeps)
+**Implemented:**
+- Created src/audio_feedback.py with AudioFeedback class for playing beep sounds
+- Implemented two distinct beeps: start (800 Hz, 0.1s) and stop (400 Hz, 0.15s)
+- Integrated audio feedback into AudioRecorder class with audio_feedback_enabled parameter
+- Updated main.py to pass audio_feedback_enabled config setting to recorder
+- Beeps play asynchronously in daemon threads to avoid blocking recording
+- Volume set to 0.3 (30%) for non-intrusive feedback
+- Audio feedback can be toggled via set_enabled() method
+- Respects audio_feedback_enabled config setting (defaults to True)
+
+**Files changed:**
+- src/audio_feedback.py (created - 87 lines)
+- src/recorder.py (updated - added AudioFeedback import and integration)
+- src/main.py (updated - pass audio_feedback_enabled from config)
+
+**Learnings:**
+- sounddevice library used for both recording and playback (no additional dependencies)
+- Use numpy to generate sine wave beeps: np.sin(frequency * 2 * np.pi * t)
+- Apply fade in/out envelope to prevent audio clicks at start/end of beep
+- Fade duration: 10ms (0.01s) is sufficient to eliminate clicks
+- Different frequencies convey different meanings: high (800 Hz) = start, low (400 Hz) = stop
+- sd.play() is non-blocking by default - perfect for beeps
+- Play beeps in daemon threads to ensure they don't prevent app shutdown
+- Volume level 0.3 (30%) is loud enough to hear but not jarring
+- Fail silently on audio playback errors (beeps are non-critical feature)
+- Start beep plays BEFORE recording thread starts for immediate feedback
+- Stop beep plays AFTER recording thread finishes to ensure audio doesn't interfere with recording
+- AudioFeedback class is reusable and easily testable in isolation
+- Integration test verified beeps play correctly and respect enabled/disabled state
+
+---
+
+## US-010 - Make keyboard shortcut configurable
+**Implemented:**
+- Added keyboard_shortcut setting to DEFAULT_CONFIG in config.py with default "Ctrl+Shift+Space"
+- Implemented parse_keyboard_shortcut() function in main.py to parse user-friendly shortcut strings
+- Supports common modifiers (Ctrl, Alt, Shift, Cmd) and special keys (Space, F1-F12, Insert, etc.)
+- Parser converts user format ("Ctrl+Shift+Space") to pynput format ("<ctrl>+<shift>+<space>")
+- Added comprehensive validation with helpful error messages showing valid format examples
+- Shows desktop notification and exits gracefully if shortcut format is invalid
+- Catches registration errors from pynput (e.g., invalid key combinations) with error notification
+- Updated README with keyboard_shortcut documentation and usage notes
+
+**Files changed:**
+- src/config.py (updated - added keyboard_shortcut to DEFAULT_CONFIG, validation, and getter method)
+- src/main.py (updated - added parse_keyboard_shortcut() function and error handling in main())
+- README.md (updated - documented keyboard_shortcut setting with examples and restart requirement)
+
+**Learnings:**
+- pynput GlobalHotKeys requires format like "<ctrl>+<shift>+<space>" with angle brackets for special keys
+- Parser must handle case-insensitive input ("Ctrl" vs "ctrl") and whitespace around + separator
+- Single-character keys (a-z, 0-9) don't need angle brackets in pynput format
+- Invalid shortcuts should fail early at startup with clear error messages, not silently
+- Error messages should provide concrete examples of valid formats for better UX
+- Shortcut validation has two stages: format parsing (our code) and registration (pynput library)
+- Must catch exceptions from pynput.keyboard.GlobalHotKeys during registration (e.g., invalid combinations)
+- Desktop notifications for config errors help users who run the app from autostart/systemd
+- Config changes require app restart since pynput doesn't support dynamic hotkey re-registration
+- Documenting the restart requirement is important for user expectations
+- Parser supports function keys F1-F12 by generating key_map entries programmatically
+- Using sys.exit(1) after configuration errors prevents app from running in broken state
+- Map-based parsing approach is extensible for adding more special keys in future
+
+---
