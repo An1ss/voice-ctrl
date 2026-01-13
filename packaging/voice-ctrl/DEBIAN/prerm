@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+# Pre-removal script for voice-ctrl
+
+echo "Removing VoiceControl..."
+
+# Remove autostart file if it exists
+if [ -f "$HOME/.config/autostart/voice-ctrl.desktop" ]; then
+    rm -f "$HOME/.config/autostart/voice-ctrl.desktop"
+fi
+
+exit 0

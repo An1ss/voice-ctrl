@@ -23,3 +23,7 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Debian package build artifacts
+*.deb
+packaging/voice-ctrl/opt/

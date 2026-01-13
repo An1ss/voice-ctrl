@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# VoiceControl launcher script
+
+# Activate virtual environment and run the application
+cd /opt/voice-ctrl
+source /opt/voice-ctrl/venv/bin/activate
+python3 -m src.main "$@"

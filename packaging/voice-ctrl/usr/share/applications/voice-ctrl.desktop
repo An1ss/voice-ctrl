@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=VoiceControl
+Comment=System-wide voice dictation using OpenAI Whisper
+Exec=/usr/bin/voice-ctrl
+Icon=voice-ctrl
+Terminal=false
+Type=Application
+Categories=Utility;Accessibility;
+Keywords=voice;dictation;speech;transcription;whisper;
+StartupNotify=false

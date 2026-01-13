@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+# Post-installation script for voice-ctrl
+
+echo "Setting up VoiceControl..."
+
+# Create virtual environment with system site packages (for PyGObject)
+cd /opt/voice-ctrl
+python3 -m venv --system-site-packages venv
+
+# Activate virtual environment and install Python dependencies
+source /opt/voice-ctrl/venv/bin/activate
+pip install --upgrade pip
+pip install -r /opt/voice-ctrl/requirements.txt
+
+echo "VoiceControl installation complete!"
+echo "You can now launch VoiceControl from the application menu or run 'voice-ctrl' in terminal."
+echo ""
+echo "Note: You will need to configure your OpenAI API key on first run."
+
+exit 0
