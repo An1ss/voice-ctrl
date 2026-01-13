@@ -81,26 +81,32 @@ class TrayIcon:
         return image
 
     def _create_menu(self):
-        """Create the tray icon menu.
+        """Create the tray icon menu as a callable.
 
         Returns:
-            pystray.Menu object
+            Callable that returns menu items (for dynamic menu support)
         """
-        menu_items = []
+        def menu_builder(icon):
+            """Build menu items dynamically."""
+            items = []
 
-        # Settings menu item
-        if self.on_settings:
-            menu_items.append(Item("Settings", self._handle_settings))
+            # Settings menu item
+            if self.on_settings:
+                items.append(Item("Settings", self._handle_settings))
 
-        # About menu item
-        if self.on_about:
-            menu_items.append(Item("About", self._handle_about))
+            # About menu item
+            if self.on_about:
+                items.append(Item("About", self._handle_about))
 
-        # Quit menu item
-        if self.on_quit:
-            menu_items.append(Item("Quit", self._handle_quit))
+            # Quit menu item
+            if self.on_quit:
+                items.append(Item("Quit", self._handle_quit))
 
-        return pystray.Menu(*menu_items) if menu_items else None
+            return items
+
+        # Return the callable for dynamic menu generation
+        # This ensures menu works properly on Linux with AppIndicator
+        return menu_builder if (self.on_settings or self.on_about or self.on_quit) else None
 
     def _handle_settings(self, icon, item):
         """Handle Settings menu click."""
@@ -132,6 +138,7 @@ class TrayIcon:
 
         # Create icon with idle state and menu
         # Note: title parameter sets the tooltip text shown on hover
+        # On GNOME Shell/AppIndicator, the menu appears on click (left or right)
         self.icon = pystray.Icon(
             name="voice_control",
             icon=self.idle_icon,
@@ -140,6 +147,7 @@ class TrayIcon:
         )
 
         # Run icon in separate thread to avoid blocking
+        # The icon.run() method makes the icon visible and sets up the menu
         self.tray_thread = threading.Thread(target=self.icon.run, daemon=True)
         self.tray_thread.start()
 
