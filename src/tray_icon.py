@@ -19,7 +19,7 @@ except ImportError:
 class TrayIcon:
     """Manages system tray icon with state indicators."""
 
-    def __init__(self, tooltip="Voice Control", on_settings=None, on_about=None, on_quit=None):
+    def __init__(self, tooltip="Voice Control", on_settings=None, on_about=None, on_quit=None, on_view_history=None):
         """Initialize the tray icon.
 
         Args:
@@ -27,6 +27,7 @@ class TrayIcon:
             on_settings: Callback function for Settings menu item
             on_about: Callback function for About menu item
             on_quit: Callback function for Quit menu item
+            on_view_history: Callback function for View History menu item
         """
         self.tooltip = tooltip
         self.icon = None
@@ -35,6 +36,7 @@ class TrayIcon:
         self.on_settings = on_settings
         self.on_about = on_about
         self.on_quit = on_quit
+        self.on_view_history = on_view_history
 
         # Generate icon images
         self.idle_icon = self._create_idle_icon()
@@ -100,6 +102,10 @@ class TrayIcon:
             """Build menu items dynamically on each click."""
             items = []
 
+            # View History menu item
+            if self.on_view_history:
+                items.append(Item("View History", self._handle_view_history))
+
             # Settings menu item
             if self.on_settings:
                 items.append(Item("Settings", self._handle_settings))
@@ -116,6 +122,12 @@ class TrayIcon:
 
         # Return Menu object wrapping the callable for dynamic menu generation
         return Menu(menu_builder)
+
+    def _handle_view_history(self, icon, item):
+        """Handle View History menu click."""
+        if self.on_view_history:
+            # Run in separate thread to avoid blocking the tray icon
+            threading.Thread(target=self.on_view_history, daemon=True).start()
 
     def _handle_settings(self, icon, item):
         """Handle Settings menu click."""

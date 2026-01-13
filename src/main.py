@@ -1,6 +1,7 @@
 """Main entry point for VoiceControl application."""
 
 import sys
+import time
 from pynput import keyboard
 from .config import Config
 from .recorder import AudioRecorder
@@ -8,7 +9,9 @@ from .transcriber import WhisperTranscriber
 from .paster import TextPaster
 from .tray_icon import TrayIcon
 from .settings_window import SettingsWindow, show_about_dialog
+from .history_window import HistoryWindow
 from .setup_wizard import SetupWizard, should_show_setup_wizard
+from .history import HistoryManager
 from pathlib import Path
 
 
@@ -137,8 +140,14 @@ def main():
     )
     transcriber = WhisperTranscriber(config=config)
     paster = TextPaster(restore_clipboard=True)
+    history_manager = HistoryManager()
 
     # Define callback functions for tray menu
+    def on_view_history():
+        """Show history viewer window."""
+        history_window = HistoryWindow(history_manager)
+        history_window.show()
+
     def on_settings():
         """Show settings window."""
         settings_window = SettingsWindow(config, recorder)
@@ -157,6 +166,7 @@ def main():
 
     # Initialize tray icon with menu callbacks
     tray_icon = TrayIcon(
+        on_view_history=on_view_history,
         on_settings=on_settings,
         on_about=on_about,
         on_quit=on_quit
@@ -165,11 +175,12 @@ def main():
     # Start system tray icon
     tray_icon.start()
 
-    def process_audio_file(audio_file):
+    def process_audio_file(audio_file, duration_seconds=None):
         """Process an audio file by transcribing and pasting.
 
         Args:
             audio_file: Path to the audio file to process
+            duration_seconds: Duration of the recording in seconds
         """
         print("Processing audio...")
         transcribed_text = transcriber.transcribe(audio_file)
@@ -177,6 +188,17 @@ def main():
         if transcribed_text:
             print("Pasting transcribed text...")
             paster.paste_text(transcribed_text)
+
+            # Add to history
+            if duration_seconds is None:
+                # Calculate duration from recorder's start time if available
+                if recorder.start_time:
+                    duration_seconds = time.time() - recorder.start_time
+                else:
+                    duration_seconds = 0
+
+            history_manager.add_entry(transcribed_text, duration_seconds)
+            print(f"Added to history (duration: {duration_seconds:.2f}s)")
         else:
             print("No transcription result to paste")
 
@@ -185,10 +207,15 @@ def main():
 
     def on_auto_stop(audio_file):
         """Callback for when recording auto-stops at max duration."""
-        process_audio_file(audio_file)
+        # Calculate duration from recorder
+        duration_seconds = time.time() - recorder.start_time if recorder.start_time else 0
+        process_audio_file(audio_file, duration_seconds)
 
     def on_hotkey():
         """Callback function when hotkey is pressed."""
+        # Capture start time before toggling
+        start_time = recorder.start_time
+
         audio_file = recorder.toggle_recording()
 
         # Update tray icon based on recording state
@@ -196,7 +223,9 @@ def main():
 
         # If recording just stopped, transcribe and paste
         if audio_file:
-            process_audio_file(audio_file)
+            # Calculate duration
+            duration_seconds = time.time() - start_time if start_time else 0
+            process_audio_file(audio_file, duration_seconds)
 
     # Set up auto-stop callback
     recorder.set_auto_stop_callback(on_auto_stop)
