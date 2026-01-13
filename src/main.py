@@ -8,6 +8,8 @@ from .transcriber import WhisperTranscriber
 from .paster import TextPaster
 from .tray_icon import TrayIcon
 from .settings_window import SettingsWindow, show_about_dialog
+from .setup_wizard import SetupWizard, should_show_setup_wizard
+from pathlib import Path
 
 
 def parse_keyboard_shortcut(shortcut_str):
@@ -86,6 +88,21 @@ def main():
 
     # Load configuration
     config = Config()
+
+    # Check if we need to show the setup wizard
+    if should_show_setup_wizard(config):
+        print("\nFirst time setup required...")
+        config_path = Path.home() / ".config" / "voice-ctrl" / "config.json"
+        wizard = SetupWizard(config_path)
+        api_key = wizard.show()
+
+        if api_key:
+            # Reload config after setup
+            config = Config()
+            print("Setup complete! Starting VoiceControl...")
+        else:
+            print("Setup skipped. You can configure the API key later from Settings.")
+            print("Note: Voice Control will not work without a valid API key.")
 
     # Get keyboard shortcut from config
     shortcut_str = config.get_keyboard_shortcut()
