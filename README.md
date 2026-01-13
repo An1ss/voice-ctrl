@@ -20,7 +20,11 @@ VoiceControl is a voice-to-text application that enables hands-free typing acros
 - Python 3.8 or higher
 - Ubuntu (GNOME desktop environment)
 - OpenAI API key
-- System dependencies: `portaudio19-dev` (for audio recording), `xclip` (for clipboard access), `python3-tk` (for settings GUI)
+- System dependencies:
+  - `portaudio19-dev` (for audio recording)
+  - `xclip` (for clipboard access)
+  - `python3-tk` (for settings GUI)
+  - `python3-gi`, `python3-gi-cairo`, `gir1.2-gtk-3.0` (for system tray icon with AppIndicator)
 
 ## Setup Instructions
 
@@ -31,19 +35,23 @@ git clone <repository-url>
 cd voice-ctrl
 ```
 
-### 2. Create virtual environment
+### 2. Install system dependencies
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install system dependencies
+**Important:** Install system dependencies before creating the virtual environment.
 
 ```bash
 sudo apt-get update
-sudo apt-get install portaudio19-dev xclip python3-tk
+sudo apt-get install -y portaudio19-dev xclip python3-tk python3-gi python3-gi-cairo gir1.2-gtk-3.0
 ```
+
+### 3. Create virtual environment
+
+```bash
+python3 -m venv venv --system-site-packages
+source venv/bin/activate
+```
+
+**Note:** The `--system-site-packages` flag is required to access the system-installed PyGObject libraries needed for the system tray icon.
 
 ### 4. Install Python dependencies
 
@@ -51,15 +59,15 @@ sudo apt-get install portaudio19-dev xclip python3-tk
 pip install -r requirements.txt
 ```
 
-### 5. Configure API key
-
-A configuration file will be automatically created at `~/.config/voice-ctrl/config.json` when you first run the application. You can manually create it beforehand:
+### 5. Run the application
 
 ```bash
-mkdir -p ~/.config/voice-ctrl
+python -m src.main
 ```
 
-Edit the configuration file with your settings:
+On first launch, a setup wizard will guide you through configuring your OpenAI API key.
+
+Alternatively, you can manually create the configuration file at `~/.config/voice-ctrl/config.json`:
 
 ```json
 {
@@ -79,12 +87,6 @@ Edit the configuration file with your settings:
   - Valid formats: "Ctrl+Shift+Space", "Alt+F1", "Ctrl+Alt+R", "Shift+Insert"
   - Requires at least one modifier key (Ctrl, Alt, Shift) plus another key
   - Changing this setting requires restarting the application
-
-### 6. Run the application
-
-```bash
-python -m src.main
-```
 
 ## Usage
 

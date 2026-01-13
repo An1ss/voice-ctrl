@@ -31,13 +31,14 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 3. Should see tooltip: "Voice Control"
 
 **Expected:** ✓ Tooltip appears within 1 second
-**Result:**
+**Result:** Passed
 **Notes:**
 
 ---
 
 ### US-014: Config Auto-Initialization
 **Test:**
+
 1. Backup current config: `mv ~/.config/voice-ctrl/config.json ~/.config/voice-ctrl/config.json.bak`
 2. Start app (will trigger setup wizard or create new config)
 3. After setup, check config: `cat ~/.config/voice-ctrl/config.json`
@@ -57,6 +58,7 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 
 ### US-015: Auto-Stop Transcription
 **Test:**
+
 1. Edit config: `nano ~/.config/voice-ctrl/config.json`
 2. Set `"max_duration_seconds": 10`
 3. Restart app
@@ -65,7 +67,7 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 6. Should auto-stop at 10 seconds AND transcribe
 
 **Expected:** ✓ Recording stops at 10s AND text is transcribed and pasted
-**Result:**
+**Result:** Pass
 **Notes:**
 
 **Cleanup:** Restore `"max_duration_seconds": 240`
@@ -79,7 +81,7 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 3. Should see menu with: Settings, About, Quit
 
 **Expected:** ✓ Menu appears with 3 items
-**Result:**
+**Result:** Pass
 
 **If menu appears, test each item:**
 - [ ] "Settings" opens settings window
@@ -99,7 +101,7 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 5. Button should save the config
 
 **Expected:** ✓ Button is visible and clickable
-**Result:**
+**Result:** Pass
 **Notes:**
 
 **Cleanup:** `mv ~/.config/voice-ctrl/config.json.bak ~/.config/voice-ctrl/config.json`
@@ -114,7 +116,7 @@ Ralph has attempted to fix US-013 through US-018. Test each fix:
 4. Should NOT see timeout warnings
 
 **Expected:** ✓ No warnings like "Failed to copy to CLIPBOARD via xclip: timeout"
-**Result:**
+**Result:** Pass
 **Console output:**
 
 ---

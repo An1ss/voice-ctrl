@@ -283,7 +283,7 @@
         "Manual test: Delete config, start app, verify button is visible and clickable"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - button exists but not visible, user had to press Enter"
     },
@@ -300,7 +300,7 @@
         "Manual test: Trigger recording multiple times, verify no timeout warnings"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - xclip timeout of 1.0s is too short, causing warnings"
     }

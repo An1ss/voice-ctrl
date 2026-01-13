@@ -506,3 +506,87 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-017 - Fix setup wizard save button visibility
+**Implemented:**
+- Increased setup wizard window height from 400px to 550px
+- Ensured all UI elements are visible including buttons at bottom
+- Window now has 35px extra vertical space for comfortable viewing
+- All elements (title, description, instructions, input, checkbox, status, buttons) are fully visible
+
+**Files changed:**
+- src/setup_wizard.py (updated - window geometry from 550x400 to 550x550)
+
+**Learnings:**
+- tkinter window geometry includes title bar and window decorations in calculation
+- Content layout with multiple rows and padding can easily exceed initial window size estimates
+- Main frame with 30px padding uses 60px total vertical space (top + bottom)
+- Each UI element with pady padding adds to total height: title (10px), desc (20px), instructions (20px), button (20px), entry (10px), checkbox (10px), status (10px), button frame (10px)
+- Actual content height for this layout: 515px total (485px main frame + 30px padding each side)
+- Testing window geometry programmatically using winfo_reqheight() and winfo_y() provides accurate measurements
+- Always add buffer space (35-50px) beyond calculated minimum to avoid edge cases with font rendering differences
+- Button visibility issues are common when window height is set too small for stacked vertical layouts
+- Users forced to use Enter key when buttons are invisible due to window size
+- Window height of 550px provides comfortable spacing and ensures all elements are accessible
+
+---
+
+## US-018 - Fix xclip timeout warnings during clipboard operations
+**Implemented:**
+- Increased xclip timeout from 1.0 seconds to 3.0 seconds for CLIPBOARD selection
+- Increased xclip timeout from 1.0 seconds to 3.0 seconds for PRIMARY selection
+- Fallback to pyperclip already existed in exception handlers and continues to work
+- Prevents "Command timed out after 1.0 seconds" warnings during clipboard operations
+- Clipboard operations now have reasonable time to complete
+
+**Files changed:**
+- src/paster.py (updated - lines 55 and 72: timeout=1.0 changed to timeout=3.0)
+
+**Learnings:**
+- xclip can take longer than 1 second to complete on some systems depending on X11 load
+- 1.0 second timeout was too aggressive and caused false positive warnings
+- 3.0 seconds provides comfortable buffer while still being reasonable for user experience
+- subprocess.run() timeout parameter accepts float values in seconds
+- Exception handling already catches subprocess.TimeoutExpired and falls back to pyperclip
+- Both CLIPBOARD and PRIMARY selections need same timeout to ensure consistency
+- Timeout warnings were confusing to users even when paste functionality worked correctly
+- The warning appeared as subprocess.TimeoutExpired exception in the generic Exception handler
+- Increasing timeout reduces unnecessary fallback triggers and improves reliability
+- pyperclip fallback remains important for edge cases and systems without xclip
+
+---
+
+## US-019 - Fix tray icon menu not appearing with PyGObject integration
+**Implemented:**
+- Identified root cause: pystray was using X11 backend instead of AppIndicator
+- X11 backend has limited menu support on GNOME Shell (menu builder called but not displayed)
+- Installed required system packages: python3-gi, python3-gi-cairo, gir1.2-gtk-3.0
+- Recreated virtual environment with --system-site-packages flag to access PyGObject
+- Modified tray_icon.py to explicitly import and use AppIndicator backend
+- Added backend detection with fallback to X11 if AppIndicator unavailable
+- Updated README.md with complete system dependency list and installation order
+- Menu now works with dynamic callable pattern using Menu(menu_builder)
+- Cleaned up debug print statements after successful testing
+
+**Files changed:**
+- src/tray_icon.py (updated - explicit AppIndicator backend import and usage)
+- README.md (updated - added PyGObject dependencies and --system-site-packages flag)
+
+**Learnings:**
+- pystray has two backends on Linux: AppIndicator (preferred) and X11 (fallback)
+- AppIndicator backend requires PyGObject (gi module) which is a system package, not pip-installable
+- System packages python3-gi, python3-gi-cairo, gir1.2-gtk-3.0 required for AppIndicator
+- Virtual environment must use --system-site-packages flag to access system-installed PyGObject
+- AppIndicator uses AyatanaAppIndicator3 on modern Ubuntu (not AppIndicator3)
+- X11 backend shows icon but menus don't appear on GNOME Shell even with correct callable pattern
+- AppIndicator backend provides better GNOME Shell integration and renders icon differently
+- Dynamic menu pattern: Menu(callable) where callable returns list of MenuItem objects
+- Explicit backend import: from pystray import _appindicator as pystray_backend
+- System dependencies must be installed BEFORE creating virtual environment
+- Installation order matters: system packages → venv creation → pip install
+- PyGObject cannot be pip-installed reliably, must use system package manager
+- AppIndicator menus respond to left-click on GNOME Shell (not just right-click)
+- Backend selection can be forced by importing specific backend module directly
+- Better to explicitly select backend than rely on pystray's auto-detection
+
+---
+

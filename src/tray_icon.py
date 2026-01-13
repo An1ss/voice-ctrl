@@ -1,9 +1,19 @@
 """System tray icon module for VoiceControl application."""
 
-import pystray
-from pystray import MenuItem as Item, Menu
+import sys
 from PIL import Image, ImageDraw
 import threading
+
+# Try to use AppIndicator backend for better GNOME Shell support
+try:
+    from pystray import _appindicator as pystray_backend
+    from pystray import MenuItem as Item, Menu
+    BACKEND = "appindicator"
+except ImportError:
+    # Fallback to X11 backend
+    from pystray import _xorg as pystray_backend
+    from pystray import MenuItem as Item, Menu
+    BACKEND = "xorg"
 
 
 class TrayIcon:
@@ -81,13 +91,13 @@ class TrayIcon:
         return image
 
     def _create_menu(self):
-        """Create the tray icon menu as a callable.
+        """Create the tray icon menu with dynamic item generation.
 
         Returns:
-            Callable that returns menu items (for dynamic menu support)
+            Menu object with callable for AppIndicator compatibility
         """
-        def menu_builder(icon):
-            """Build menu items dynamically."""
+        def menu_builder():
+            """Build menu items dynamically on each click."""
             items = []
 
             # Settings menu item
@@ -105,8 +115,7 @@ class TrayIcon:
             return items
 
         # Return Menu object wrapping the callable for dynamic menu generation
-        # This ensures menu works properly on Linux with AppIndicator
-        return Menu(menu_builder) if (self.on_settings or self.on_about or self.on_quit) else None
+        return Menu(menu_builder)
 
     def _handle_settings(self, icon, item):
         """Handle Settings menu click."""
@@ -139,7 +148,7 @@ class TrayIcon:
         # Create icon with idle state and menu
         # Note: title parameter sets the tooltip text shown on hover
         # On GNOME Shell/AppIndicator, the menu appears on click (left or right)
-        self.icon = pystray.Icon(
+        self.icon = pystray_backend.Icon(
             name="voice_control",
             icon=self.idle_icon,
             title=self.tooltip,
@@ -148,7 +157,15 @@ class TrayIcon:
 
         # Run icon in separate thread to avoid blocking
         # The icon.run() method makes the icon visible and sets up the menu
-        self.tray_thread = threading.Thread(target=self.icon.run, daemon=True)
+        def run_icon():
+            try:
+                self.icon.run()
+            except Exception as e:
+                print(f"ERROR: System tray icon failed: {e}")
+                import traceback
+                traceback.print_exc()
+
+        self.tray_thread = threading.Thread(target=run_icon, daemon=True)
         self.tray_thread.start()
 
         print("System tray icon started")
