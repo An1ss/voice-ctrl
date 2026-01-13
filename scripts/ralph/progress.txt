@@ -308,3 +308,99 @@ Started: $(date +%Y-%m-%d)
 - Map-based parsing approach is extensible for adding more special keys in future
 
 ---
+## US-011 - Add settings window from tray icon
+**Implemented:**
+- Created src/settings_window.py with SettingsWindow class for GUI configuration
+- Added show_about_dialog() function for About dialog
+- Settings window displays all configurable options with proper UI controls:
+  - Text entry for API key (masked with show="*")
+  - Text entry for max recording duration (validated as positive integer)
+  - Checkbox for audio feedback enabled/disabled
+  - Text entry for keyboard shortcut string
+- Implemented immediate save to config.json when user clicks Save button
+- Added "Test Recording" button with instructions dialog
+- Added menu to tray icon with three options: Settings, About, Quit
+- Updated TrayIcon class to accept callback functions for menu items
+- Menu handlers run in separate threads to avoid blocking tray icon
+- Integrated settings window and about dialog into main.py
+- Added on_quit callback to gracefully exit application
+- Updated README.md with usage documentation for tray menu and settings window
+
+**Files changed:**
+- src/settings_window.py (created - 257 lines)
+- src/tray_icon.py (updated - added menu support with callbacks)
+- src/main.py (updated - added settings window and menu callback integration)
+- README.md (updated - documented tray menu and settings window usage)
+
+**Learnings:**
+- tkinter is Python's standard GUI library but requires system package python3-tk on Ubuntu
+- tkinter must be installed via apt-get: sudo apt-get install python3-tk (not in requirements.txt)
+- pystray.Menu accepts pystray.MenuItem objects (imported as Item for brevity)
+- Menu item callbacks receive (icon, item) parameters even if not used
+- Menu callbacks should run in separate threads (threading.Thread) to avoid blocking tray icon
+- Settings window should check if already open (self.window is not None) to avoid multiple instances
+- window.lift() and window.focus_force() bring existing window to front
+- Use ttk (themed tkinter) widgets for modern appearance: ttk.Label, ttk.Entry, ttk.Button, ttk.Checkbutton
+- Entry widget show="*" parameter masks sensitive input like API keys
+- BooleanVar is tkinter's way to bind checkbox state to a variable
+- Config validation should happen before saving: check positive integers, valid types
+- Use window.protocol("WM_DELETE_WINDOW", callback) to handle window close button
+- window.mainloop() is blocking, so settings window runs in its own thread
+- Test Recording button shows messagebox with instructions, then triggers recorder.toggle_recording()
+- About dialog is simpler: separate Tk window with read-only information and Close button
+- Geometry string format: "WIDTHxHEIGHT" e.g., "500x400" for window size
+- window.resizable(False, False) prevents user from resizing the window
+- Grid layout with padding: frame.grid(row=X, column=Y, sticky=tk.W, pady=5, padx=(10, 0))
+- messagebox.showinfo(), messagebox.showerror(), messagebox.showwarning() for dialogs
+- Config file updates should use json.load() then json.dump() to preserve formatting
+- Settings window needs reference to Config object to read current values and save changes
+- Optional recorder parameter allows Test Recording feature (graceful degradation if None)
+- on_quit callback should check if recording active before exiting to clean up properly
+- Document system dependencies clearly in README for better user experience
+- GUI provides better UX than editing JSON manually, especially for non-technical users
+
+---
+
+## US-012 - API key setup wizard
+**Implemented:**
+- Created src/setup_wizard.py with SetupWizard class for first-time configuration
+- Implemented validate_api_key() function that tests API key with OpenAI API
+- Added should_show_setup_wizard() helper to detect when wizard should appear
+- Wizard shows on first launch when API key is missing or empty
+- GUI with tkinter displays setup dialog requesting OpenAI API key
+- "Get API Key" button opens https://platform.openai.com/api-keys in browser
+- API key validation makes test request to OpenAI (models.list()) to verify authentication
+- Show/hide checkbox for API key visibility (default: masked with show="*")
+- "Validate & Save" button validates key and saves to config file
+- "Skip (Configure Later)" button allows users to postpone setup
+- Integrated wizard into main.py startup flow before other initialization
+- Config reloaded after successful setup to pick up new API key
+
+**Files changed:**
+- src/setup_wizard.py (created - 309 lines)
+- src/main.py (updated - added SetupWizard import and startup integration)
+
+**Learnings:**
+- First-time setup wizard improves onboarding UX significantly for new users
+- API key validation should use lightweight endpoint (models.list()) not full transcription test
+- webbrowser.open() provides cross-platform way to open URLs in default browser
+- Modal window behavior using window.grab_set() prevents interaction with other windows
+- Show/hide password toggle improves UX for long API keys (easier to verify when pasting)
+- Validation should happen before save: test API key authenticity before writing to config
+- Handle multiple error types from OpenAI: AuthenticationError, APIConnectionError, APIError
+- Status label with color coding (gray/blue/green/red) provides clear visual feedback during validation
+- Button state management: disable during validation, re-enable on error (prevents double-click issues)
+- Skip option important for flexibility: users may want to get key later or configure manually
+- Wizard returns API key on success, None on skip - allows caller to know outcome
+- Config reload after setup ensures main app uses newly saved API key
+- Entry widget focus() on startup improves UX (user can immediately start typing)
+- Bind Enter key to submit action (wizard.show()) for keyboard-friendly workflow
+- Protocol handler for WM_DELETE_WINDOW ensures proper cleanup when window closed
+- Test validation with invalid key first to confirm error handling works correctly
+- client.models.list() is faster and cheaper than transcription for validation
+- pathlib.Path.parent.mkdir(parents=True, exist_ok=True) ensures config directory exists before save
+- Merge new API key with existing config to preserve other settings (don't overwrite everything)
+- should_show_setup_wizard() centralizes detection logic: shows when api_key is empty or whitespace
+
+---
+
