@@ -206,6 +206,103 @@
       "passes": true,
       "scope": "current",
       "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Fix tray icon tooltip not showing on hover",
+      "description": "As a user, I want to see a tooltip when hovering over the tray icon so I know what the icon represents.\n\n**Current Issue:**\nNo tooltip appears when hovering over the system tray icon.\n\n**What to fix:**\n- Review src/tray_icon.py tooltip implementation\n- Ensure tooltip is properly set when creating the tray icon\n- Test tooltip displays \"Voice Control\" on hover\n- Verify tooltip works in Ubuntu GNOME Shell system tray",
+      "acceptanceCriteria": [
+        "Tooltip \"Voice Control\" appears when hovering over tray icon",
+        "Tooltip is visible within 1 second of hover",
+        "Tooltip works consistently across app restarts",
+        "Manual test: Start app, hover over icon, verify tooltip shows"
+      ],
+      "priority": 13,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - tooltip not appearing at all"
+    },
+    {
+      "id": "US-014",
+      "title": "Auto-initialize all config parameters on first run",
+      "description": "As a user, I want all configuration parameters to be initialized with defaults on first run so I don't have to manually add them.\n\n**Current Issue:**\nConfig file only contains `api_key` by default. Other parameters (max_duration_seconds, audio_feedback_enabled, keyboard_shortcut) are missing and must be added manually.\n\n**What to fix:**\n- Update src/config.py to write all default config parameters when creating config file\n- Ensure config file includes:\n  - api_key (empty string or from wizard)\n  - max_duration_seconds (240)\n  - audio_feedback_enabled (true)\n  - keyboard_shortcut (\"Ctrl+Shift+Space\")\n- Handle config migration: if user has old config with only api_key, add missing parameters with defaults",
+      "acceptanceCriteria": [
+        "New config file contains all 4 parameters with defaults",
+        "Existing config files get missing parameters added automatically",
+        "Default values match documentation in README",
+        "Manual test: Delete config, start app, verify config has all parameters"
+      ],
+      "priority": 14,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - config only had api_key after setup wizard"
+    },
+    {
+      "id": "US-015",
+      "title": "Fix auto-stop to transcribe recording before exiting",
+      "description": "As a user, I want my recording to be transcribed even when it auto-stops at max duration so I don't lose my dictation.\n\n**Current Issue:**\nWhen recording reaches max_duration_seconds and auto-stops, the recording is NOT transcribed. It just exits without sending audio to Whisper API.\n\n**What to fix:**\n- Review src/recorder.py auto-stop logic\n- Ensure auto-stop behaves the same as manual stop (user pressing shortcut again)\n- After auto-stop, recording should be transcribed and pasted\n- Test with short max_duration (10 seconds) to verify",
+      "acceptanceCriteria": [
+        "Recording auto-stops at configured max_duration_seconds",
+        "Audio is transcribed after auto-stop (same as manual stop)",
+        "Transcribed text is pasted at cursor after auto-stop",
+        "User sees notification or feedback that auto-stop occurred",
+        "Manual test: Set max_duration=10, record for 15s, verify text is transcribed and pasted"
+      ],
+      "priority": 15,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - auto-stop exits without transcribing"
+    },
+    {
+      "id": "US-016",
+      "title": "Fix tray icon right-click menu not appearing",
+      "description": "As a user, I want to right-click the tray icon and see a menu so I can access Settings, About, and Quit options.\n\n**Current Issue:**\nRight-clicking the tray icon does nothing. No menu appears.\n\n**What to fix:**\n- Review src/tray_icon.py menu implementation\n- Ensure right-click event is properly bound to menu\n- Menu should have 3 items: Settings, About, Quit\n- Settings should open settings window (src/settings_window.py)\n- About should show about dialog\n- Quit should exit application cleanly\n- Test on Ubuntu GNOME Shell",
+      "acceptanceCriteria": [
+        "Right-click on tray icon shows menu with 3 items",
+        "\"Settings\" menu item opens settings window",
+        "\"About\" menu item shows about dialog",
+        "\"Quit\" menu item exits application cleanly",
+        "Menu is responsive and doesn't freeze",
+        "Manual test: Right-click icon, verify menu appears and all items work"
+      ],
+      "priority": 16,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - right-click does nothing, menu not appearing"
+    },
+    {
+      "id": "US-017",
+      "title": "Fix setup wizard save button visibility",
+      "description": "As a user, I want to see and click the save button in the setup wizard so I can save my API key without needing to press Enter.\n\n**Current Issue:**\nSetup wizard appears and works, but the \"Validate & Save\" button is not visible. Users must press Enter to save.\n\n**What to fix:**\n- Review src/setup_wizard.py button layout\n- Ensure \"Validate & Save\" button is visible and properly positioned\n- Check window height/width to ensure button isn't cut off\n- Verify button styling makes it clearly visible\n- Test button click functionality",
+      "acceptanceCriteria": [
+        "\"Validate & Save\" button is visible in setup wizard window",
+        "Button is properly positioned below API key input field",
+        "Button responds to mouse clicks",
+        "Button has clear visual styling (not hidden or transparent)",
+        "Window is tall enough to show all elements without scrolling",
+        "Manual test: Delete config, start app, verify button is visible and clickable"
+      ],
+      "priority": 17,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - button exists but not visible, user had to press Enter"
+    },
+    {
+      "id": "US-018",
+      "title": "Fix xclip timeout warnings during clipboard operations",
+      "description": "As a user, I want clipboard operations to complete without timeout warnings so the app works smoothly.\n\n**Current Issue:**\nWarnings appear in console: \"WARNING: Failed to copy to CLIPBOARD via xclip: Command '['xclip', '-selection', 'clipboard']' timed out after 1.0 seconds\"\n\n**What to fix:**\n- Review src/paster.py xclip timeout settings\n- Current timeout is 1.0 seconds, which is too short\n- Increase timeout to 3.0 seconds for both CLIPBOARD and PRIMARY selections\n- Ensure clipboard operations still complete in reasonable time\n- Add fallback to pyperclip if xclip consistently times out",
+      "acceptanceCriteria": [
+        "No timeout warnings during normal clipboard operations",
+        "xclip timeout set to at least 3 seconds",
+        "Clipboard operations complete successfully",
+        "Fallback to pyperclip works if xclip fails",
+        "Console output is clean (no warnings during successful paste)",
+        "Manual test: Trigger recording multiple times, verify no timeout warnings"
+      ],
+      "priority": 18,
+      "passes": false,
+      "scope": "current",
+      "notes": "Bug found during testing - xclip timeout of 1.0s is too short, causing warnings"
     }
   ]
 }
