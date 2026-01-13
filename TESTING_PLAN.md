@@ -195,4 +195,123 @@ Restored previous clipboard contents
 **Action Items:**
 - [x] Fix terminal paste issue (US-012.1) - DONE
 - [x] Fix tray icon startup crash - DONE
-- [ ] Run Ralph to fix remaining 6 bugs (US-013 to US-018)
+- [x] Ralph worked on US-013 to US-018 - DONE
+- [ ] Re-test Ralph's fixes (see below)
+
+---
+
+## Re-Testing After Ralph's Fixes
+
+Ralph has attempted to fix US-013 through US-018. Test each fix:
+
+### US-013: Tray Icon Tooltip ⏳
+**Test:**
+1. Start app: `python -m src.main`
+2. Hover mouse over tray icon
+3. Should see tooltip: "Voice Control"
+
+**Expected:** ✓ Tooltip appears within 1 second
+**Result:** Pass / Fail
+**Notes:** _______________
+
+---
+
+### US-014: Config Auto-Initialization ⏳
+**Test:**
+1. Backup current config: `mv ~/.config/voice-ctrl/config.json ~/.config/voice-ctrl/config.json.bak`
+2. Start app (will trigger setup wizard or create new config)
+3. After setup, check config: `cat ~/.config/voice-ctrl/config.json`
+4. Should have ALL parameters:
+   - `api_key`
+   - `max_duration_seconds` (240)
+   - `audio_feedback_enabled` (true)
+   - `keyboard_shortcut` ("Ctrl+Shift+Space")
+
+**Expected:** ✓ All 4 parameters present with defaults
+**Result:** Pass / Fail
+**Notes:** _______________
+
+**Cleanup:** `mv ~/.config/voice-ctrl/config.json.bak ~/.config/voice-ctrl/config.json`
+
+---
+
+### US-015: Auto-Stop Transcription ⏳
+**Test:**
+1. Edit config: `nano ~/.config/voice-ctrl/config.json`
+2. Set `"max_duration_seconds": 10`
+3. Restart app
+4. Open text editor
+5. Start recording and keep talking for 15+ seconds
+6. Should auto-stop at 10 seconds AND transcribe
+
+**Expected:** ✓ Recording stops at 10s AND text is transcribed and pasted
+**Result:** Pass / Fail
+**Notes:** _______________
+
+**Cleanup:** Restore `"max_duration_seconds": 240`
+
+---
+
+### US-016: Tray Icon Right-Click Menu ⏳
+**Test:**
+1. Start app
+2. Right-click tray icon
+3. Should see menu with: Settings, About, Quit
+
+**Expected:** ✓ Menu appears with 3 items
+**Result:** Pass / Fail
+
+**If menu appears, test each item:**
+- [ ] "Settings" opens settings window
+- [ ] "About" shows about dialog
+- [ ] "Quit" exits application cleanly
+
+**Notes:** _______________
+
+---
+
+### US-017: Setup Wizard Save Button ⏳
+**Test:**
+1. Backup config: `mv ~/.config/voice-ctrl/config.json ~/.config/voice-ctrl/config.json.bak`
+2. Start app (wizard should appear)
+3. Check if "Validate & Save" button is VISIBLE
+4. Click the button (don't use Enter)
+5. Button should save the config
+
+**Expected:** ✓ Button is visible and clickable
+**Result:** Pass / Fail
+**Notes:** _______________
+
+**Cleanup:** `mv ~/.config/voice-ctrl/config.json.bak ~/.config/voice-ctrl/config.json`
+
+---
+
+### US-018: xclip Timeout Warnings ⏳
+**Test:**
+1. Start app
+2. Trigger recording 3-5 times
+3. Watch console output during paste
+4. Should NOT see timeout warnings
+
+**Expected:** ✓ No warnings like "Failed to copy to CLIPBOARD via xclip: timeout"
+**Result:** Pass / Fail
+**Console output:** _______________
+
+---
+
+## Re-Test Summary
+
+After testing, fill in:
+
+**Tests Passing:** ___ / 6
+**Tests Failing:** ___ / 6
+
+**Bugs Fixed by Ralph:**
+- [ ] US-013: Tray tooltip
+- [ ] US-014: Config initialization
+- [ ] US-015: Auto-stop transcription
+- [ ] US-016: Right-click menu
+- [ ] US-017: Save button visibility
+- [ ] US-018: xclip timeout
+
+**Any New Issues Found:** _______________
