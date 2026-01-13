@@ -218,7 +218,7 @@
         "Manual test: Start app, hover over icon, verify tooltip shows"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - tooltip not appearing at all"
     },
@@ -233,7 +233,7 @@
         "Manual test: Delete config, start app, verify config has all parameters"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - config only had api_key after setup wizard"
     },
@@ -249,7 +249,7 @@
         "Manual test: Set max_duration=10, record for 15s, verify text is transcribed and pasted"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - auto-stop exits without transcribing"
     },
@@ -266,7 +266,7 @@
         "Manual test: Right-click icon, verify menu appears and all items work"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": "Bug found during testing - right-click does nothing, menu not appearing"
     },

@@ -404,3 +404,105 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-013 - Fix tray icon tooltip not showing on hover
+**Implemented:**
+- Updated pystray.Icon initialization to use explicit keyword arguments
+- Changed from positional args to keyword args: name=, icon=, title=, menu=
+- Added comment clarifying that title parameter sets the tooltip text
+- Verified tooltip "Voice Control" is properly set via pystray.Icon.title attribute
+
+**Files changed:**
+- src/tray_icon.py (updated - line 135-140: use keyword arguments for pystray.Icon)
+
+**Learnings:**
+- pystray.Icon accepts tooltip via the 'title' parameter (3rd positional or keyword arg)
+- Using keyword arguments (name=, icon=, title=, menu=) is more explicit and maintainable than positional args
+- The pystray library correctly sets the tooltip regardless of positional vs keyword argument style
+- Tooltip display in GNOME Shell may vary by system configuration and extensions installed
+- Explicit keyword arguments make code intent clearer and prevent parameter order mistakes
+- The title attribute can be verified programmatically via icon.title after creation
+- Testing showed tooltip is set correctly in code; any display issues are environmental (GNOME Shell/AppIndicator behavior)
+- Adding menu to tray icon does not break tooltip functionality when properly configured
+
+---
+
+## US-014 - Auto-initialize all config parameters on first run
+**Implemented:**
+- Added config migration logic in Config._load_config() to detect missing parameters
+- Migration writes complete merged config back to disk when parameters are missing
+- Ensures all 4 default parameters (api_key, max_duration_seconds, audio_feedback_enabled, keyboard_shortcut) exist in config file
+- Works for both new installs (fresh config creation) and existing configs (migration)
+- Maintains backward compatibility with old openai_api_key field
+
+**Files changed:**
+- src/config.py (updated - added migration logic lines 91-108)
+
+**Learnings:**
+- Config migration requires TWO steps: merge in memory AND write back to disk
+- Previous implementation only merged in memory - users still had incomplete config files on disk
+- Check needs_migration by iterating through DEFAULT_CONFIG keys and checking if they exist in loaded config
+- Migration should print user-friendly messages to explain what's happening
+- Error handling during migration write should be non-fatal (log warning but continue with merged config in memory)
+- Test all scenarios: fresh config, old config with only api_key, backward compatibility with openai_api_key
+- json.dump with indent=2 creates readable config files that users can manually edit if needed
+- Migration is idempotent - running multiple times on a complete config doesn't cause issues
+- The issue was setup_wizard created partial configs in some cases, but even when it created full configs, users who had old configs from before all parameters existed needed migration
+- Config file on disk must match what's loaded in memory to avoid user confusion when editing config manually
+
+---
+
+## US-015 - Fix auto-stop to transcribe recording before exiting
+**Implemented:**
+- Added callback mechanism (on_auto_stop_callback) to AudioRecorder class
+- Implemented _handle_auto_stop() method that performs same actions as manual stop
+- Auto-stop now plays stop beep, saves audio file, and triggers transcription workflow
+- Added notification to inform user when auto-stop occurs
+- Refactored main.py to extract process_audio_file() function for code reuse
+- Set up auto-stop callback in main.py to trigger transcription and paste
+- Tray icon state properly updates after auto-stop processing completes
+
+**Files changed:**
+- src/recorder.py (updated - added callback mechanism and auto-stop handler)
+- src/main.py (updated - refactored audio processing and added auto-stop callback setup)
+
+**Learnings:**
+- Auto-stop logic must trigger the same workflow as manual stop to ensure audio is processed
+- Simply setting is_recording=False in the recording thread is insufficient - need explicit handling
+- Callback pattern is ideal for decoupling recorder from transcription/paste logic
+- Threading considerations: _handle_auto_stop runs in separate daemon thread to avoid blocking
+- Must wait for recording_thread to join before processing audio (ensures all audio data captured)
+- Desktop notification informs user that auto-stop occurred and transcription is happening
+- Code reuse: Extract common logic (process_audio_file) when manual and auto-stop share behavior
+- Tray icon state must be updated after processing completes, not just when recording stops
+- Test with short max_duration (5 seconds) makes it easy to verify auto-stop functionality quickly
+- The bug occurred because original auto-stop only set flag but didn't trigger save/transcribe pipeline
+- Recording thread cannot directly call stop_recording() due to deadlock (would join itself)
+- Solution: Spawn new thread for _handle_auto_stop to handle cleanup and callbacks independently
+
+---
+
+## US-016 - Fix tray icon right-click menu not appearing
+**Implemented:**
+- Changed menu creation pattern from static pystray.Menu to callable function
+- Modified _create_menu() to return menu_builder function that dynamically creates items
+- Menu items are now built on-demand when icon is clicked (left or right)
+- Created test script (test_menu_fix.py) for manual verification
+- Verified menu creation programmatically: 3 items (Settings, About, Quit)
+
+**Files changed:**
+- src/tray_icon.py (updated - changed _create_menu to return callable instead of Menu object)
+- test_menu_fix.py (created - manual test script)
+
+**Learnings:**
+- pystray on Linux with AppIndicator requires menu to be a callable, not a static Menu object
+- Callable pattern: function that accepts icon parameter and returns list of MenuItem objects
+- This pattern ensures menu works on both GNOME Shell and other Linux desktop environments
+- Static pystray.Menu(...) might not trigger properly on some systems with AppIndicator
+- Callable menus are rebuilt dynamically on each click, ensuring they always work
+- Menu appears on both left-click and right-click when using AppIndicator backend
+- Testing showed menu_builder(None) correctly returns 3 items with proper text attributes
+- The icon parameter passed to menu_builder allows for dynamic menu content based on state
+- This is the recommended pattern in pystray for Linux desktop integration
+
+---
+

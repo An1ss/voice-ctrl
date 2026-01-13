@@ -71,7 +71,7 @@ class SetupWizard:
         # Create window
         self.window = tk.Tk()
         self.window.title("Voice Control - First Time Setup")
-        self.window.geometry("550x400")
+        self.window.geometry("550x550")
         self.window.resizable(False, False)
 
         # Make window modal
