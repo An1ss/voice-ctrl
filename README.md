@@ -14,6 +14,40 @@ VoiceControl is a voice-to-text application that enables hands-free typing acros
 - System tray icon with status indicators
 - Desktop notifications for errors and important events
 - Works across all applications: terminal, browser, text editors, IDEs
+- Transcription history (last 30 entries)
+- .deb package for easy installation
+- Autostart support (Start at Login)
+
+## Future Features
+
+Planned improvements and features under consideration:
+
+### High Priority
+
+- **Local Processing Support**: Integrate whisper.cpp for completely offline transcription (privacy-first, no data leaves your device)
+- **Multiple Voice Provider Options**: Add support for alternative transcription APIs:
+  - [Groq](https://groq.com/) (Whisper Large v3 Turbo - ultra-fast, low cost)
+  - [Deepgram Nova-3](https://deepgram.com/) (sub-300ms latency, high accuracy)
+  - [AssemblyAI Universal-2](https://www.assemblyai.com/) (99+ languages, sentiment analysis, speaker diarization)
+  - [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) (Chirp - 125+ languages)
+  - Local models via [Voxtral](https://mistral.ai/) (Mistral AI's open-source alternative)
+
+### Medium Priority
+
+- **SQLite Database**: Migrate from JSON to SQLite for more robust history storage
+  - Remove 30-entry limit
+  - Better query performance
+  - Search and filter capabilities
+- **AppImage Packaging**: Universal Linux package that works on all distributions without installation
+- **Additional Package Formats**: .rpm (Fedora/RHEL), flatpak (sandboxed), tar.gz (universal archive)
+
+### Lower Priority
+
+- **Enhanced Visual Feedback**: Recording/processing animations in tray icon
+- **Improved History UI**: Better layout, timestamps, copy buttons, search functionality
+- **Model Management UI**: If local processing is added, allow users to download and manage different Whisper models
+
+See [COMPETITOR_ANALYSIS.md](docs/COMPETITOR_ANALYSIS.md) for detailed research on these features.
 
 ## Requirements
 
@@ -137,6 +171,209 @@ Activate the virtual environment before development:
 ```bash
 source venv/bin/activate
 ```
+
+## Troubleshooting
+
+### Problem: "ModuleNotFoundError: No module named 'sounddevice'"
+
+**Cause:** Python dependencies not installed
+
+**Solution:**
+```bash
+cd /path/to/voice-ctrl
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+### Problem: "OSError: PortAudio library not found"
+
+**Cause:** System dependency missing
+
+**Solution:**
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev
+```
+
+Then restart the application.
+
+---
+
+### Problem: "Pyperclip could not find a copy/paste mechanism"
+
+**Cause:** Clipboard tool not installed
+
+**Solution:**
+```bash
+sudo apt-get install xclip
+```
+
+For Wayland (instead of X11):
+```bash
+sudo apt-get install wl-clipboard
+```
+
+---
+
+### Problem: System tray icon doesn't appear
+
+**Cause:** Desktop environment doesn't support system tray or extension needed
+
+**Solution for GNOME:**
+```bash
+# Install AppIndicator extension from GNOME Extensions website
+# https://extensions.gnome.org/extension/615/appindicator-support/
+```
+
+**Alternative:** Check if your desktop environment supports system tray icons natively.
+
+---
+
+### Problem: "Invalid API key" notification appears
+
+**Cause:** API key is incorrect or missing
+
+**Solution:**
+
+1. Verify config file exists:
+   ```bash
+   cat ~/.config/voice-ctrl/config.json
+   ```
+
+2. Check API key format (should start with "sk-"):
+   ```json
+   {
+     "api_key": "sk-proj-..."
+   }
+   ```
+
+3. Get a new API key from: https://platform.openai.com/api-keys
+
+4. Update config file through Settings window or manually edit:
+   ```bash
+   nano ~/.config/voice-ctrl/config.json
+   ```
+
+---
+
+### Problem: No audio is recorded (silence)
+
+**Possible causes and solutions:**
+
+**1. Microphone is muted**
+```bash
+# Check microphone status
+pactl list sources | grep -A 10 "analog-input-mic"
+```
+
+**2. Wrong microphone selected**
+- Check Ubuntu Sound Settings
+- Ensure correct input device is selected
+- Test microphone with: `arecord -d 5 test.wav && aplay test.wav`
+
+**3. Permission issues**
+- Ensure user is in audio group:
+  ```bash
+  groups | grep audio
+  ```
+- If not, add yourself:
+  ```bash
+  sudo usermod -a -G audio $USER
+  # Then log out and log back in
+  ```
+
+---
+
+### Problem: Transcription is inaccurate
+
+**Possible causes:**
+
+**1. Background noise**
+- Use in quiet environment
+- Speak clearly and directly into microphone
+- Check microphone quality
+
+**2. Speaking too fast/slow**
+- Speak at normal conversational pace
+- Pause briefly between sentences
+
+**3. Technical/domain-specific terms**
+- Whisper may not recognize specialized jargon
+- Spell out acronyms when speaking
+
+---
+
+### Problem: Application crashes or freezes
+
+**Steps to diagnose:**
+
+1. **Check logs:**
+   ```bash
+   cat ~/.config/voice-ctrl/voice-ctrl.log
+   ```
+
+2. **Run with verbose output:**
+   ```bash
+   python -m src.main 2>&1 | tee debug.log
+   ```
+
+3. **Check for orphaned processes:**
+   ```bash
+   ps aux | grep python | grep main
+   killall -9 python  # If needed to clean up
+   ```
+
+4. **Verify dependencies:**
+   ```bash
+   pip list | grep -E "openai|pynput|sounddevice|pystray|pyperclip|plyer"
+   ```
+
+---
+
+### Problem: Shortcut (Ctrl+Shift+Space) doesn't work
+
+**Possible causes:**
+
+**1. Keyboard shortcut conflict**
+- Another application is using the same shortcut
+- Check Ubuntu keyboard shortcuts: Settings → Keyboard → View and Customize Shortcuts
+- Change shortcut in VoiceControl Settings window
+
+**2. Permission issues**
+- pynput may need additional permissions on some systems
+
+**3. X11 vs Wayland**
+- Global hotkeys work better on X11
+- If using Wayland, try switching to X11 session
+
+---
+
+## Usage Tips
+
+### Best Practices
+
+1. **Speak clearly** - Use normal conversational pace
+2. **Quiet environment** - Minimize background noise
+3. **Good microphone** - Use quality microphone for better results
+4. **Pause between thoughts** - Helps Whisper add punctuation
+5. **Review transcription** - Always check for accuracy
+
+### Cost Information
+
+**OpenAI Whisper API Pricing:**
+- $0.006 per minute of audio
+
+**Example costs:**
+- 10 seconds of speech: ~$0.001
+- 1 minute: $0.006
+- 10 minutes per day: $0.06/day = $1.80/month
+- 100 transcriptions (avg 30s each): ~$0.30
+
+**Monitor your usage at:** https://platform.openai.com/usage
+
+---
 
 ## License
 
