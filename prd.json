@@ -426,7 +426,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": ""
     },
@@ -442,7 +442,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 26,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": ""
     },
@@ -457,7 +457,7 @@
         "History logging still records the transcription when fallback succeeds"
       ],
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": ""
     },

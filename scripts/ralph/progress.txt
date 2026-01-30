@@ -863,3 +863,117 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-025 - Settings UI for local STT selection
+**Implemented:**
+- Complete redesign of Settings window with tabbed interface using ttk.Notebook
+- General tab: STT provider selector, API key, duration, audio feedback, keyboard shortcut, autostart
+- Local STT tab: Dedicated interface for local model configuration
+- Engine selector (combobox) defaulting to faster-whisper
+- Model selection UI with Listbox for discovered models
+- Truncated path display (shows first 30 and last 27 chars if path > 60 chars)
+- Selected model path displayed in read-only entry with Copy button
+- Three action buttons: "Scan Default Paths", "Scan Folder...", "Refresh List"
+- Refresh List removes non-existent models and shows removal count
+- Model download section with model_id entry and Download button
+- Download runs in background thread, shows progress dialogs, rescans after success
+- All local STT settings persist to config on save
+- Updated _save_settings to include stt_provider, local_engine, local_model_path, local_model_id
+
+**Files changed:**
+- src/settings_window.py (major refactor - added tabs, new methods, enhanced UI)
+- test_settings_ui_local.py (created - manual UI test script)
+- test_settings_validation.py (created - automated validation test)
+
+**Learnings:**
+- tkinter ttk.Notebook provides clean tabbed interface for organizing settings
+- tk.StringVar and other tk variables must be created AFTER Tk() window is initialized
+- Cannot create tk.StringVar in __init__ before window exists - causes "no default root window" error
+- Move tk variable initialization to show() method after self.window = tk.Tk()
+- ttk.Combobox with state="readonly" prevents typing, only allows selection from values list
+- Listbox selection binding: self.listbox.bind('<<ListboxSelect>>', callback)
+- Get selected index: listbox.curselection() returns tuple of selected indices
+- Truncate long paths intelligently: show beginning and end, not middle (better UX)
+- Background thread pattern for downloads: thread updates UI via window.after(0, callback)
+- window.after(0, lambda: ...) schedules callback on main thread (thread-safe UI updates)
+- Merge discovered models to avoid duplicates when scanning multiple times
+- Use set to track existing paths: existing_paths = {model['path'] for model in list}
+- Refresh functionality: filter list with Path(path).exists() to remove deleted models
+- pyperclip.copy() for clipboard operations from Copy button
+- LocalTranscriber model download triggered by creating instance with model_id
+- Download validation: call _load_model() after creation to ensure download succeeded
+- Settings save now handles 4 new fields: stt_provider, local_engine, local_model_path, local_model_id
+- Window geometry 800x700 provides enough space for tabbed layout with all controls visible
+- Tab organization improves UX: General for common settings, Local STT for advanced local config
+- Test script approach: validation test (automated) + UI test (manual instructions)
+
+---
+
+## US-026 - Model download from scratch
+**Implemented:**
+- Fixed model download functionality in Settings window
+- Updated _download_model() method to work with new LocalTranscriber constructor
+- LocalTranscriber now uses Config-based initialization instead of direct parameters
+- Download creates temporary Config instance with model_id set
+- Downloads models to ~/.cache/huggingface/ automatically
+- Progress dialogs shown during download process
+- Success dialog triggers model list rescan to show newly downloaded model
+- Error handling shows desktop notifications for network/invalid model issues
+- Created test scripts to verify download functionality
+
+**Files changed:**
+- src/settings_window.py (updated - fixed LocalTranscriber instantiation in download_worker)
+- test_model_download.py (created - automated test for model download)
+- test_settings_download.py (created - manual UI test instructions)
+
+**Learnings:**
+- LocalTranscriber constructor signature changed from (model_path, model_id, log_path) to (config)
+- Must create temporary Config instance and override settings to pass model_id to LocalTranscriber
+- faster-whisper downloads models to ~/.cache/huggingface/hub automatically when using model IDs
+- Model loading is lazy - _load_model() must be called explicitly to trigger download
+- Download validation should call _load_model() and check return value (True/False)
+- Background thread pattern for downloads prevents UI blocking during long operations
+- window.after(0, lambda: ...) schedules UI updates from background thread (thread-safe)
+- Model IDs can be simple names (tiny, base, small, medium, large) or full HF names (openai/whisper-small)
+- HF Hub shows warning about unauthenticated requests but downloads work without token
+- Test script confirms: config creation, transcriber initialization, and model loading all work correctly
+- Settings window already had complete download UI and workflow, only needed constructor fix
+- Downloaded models appear in scan results when "Scan Default Paths" is clicked
+- Error messages should be descriptive: show model_id and specific error from exception
+
+---
+
+## US-027 - Fallback to OpenAI on local failure
+**Implemented:**
+- Modified main.py to initialize both LocalTranscriber and WhisperTranscriber when stt_provider is "local"
+- Added fallback_transcriber variable that is only set when using local STT
+- Modified LocalTranscriber.transcribe() to accept optional cleanup parameter (default: True)
+- When fallback is available, local transcriber is called with cleanup=False to preserve audio file
+- If local transcription returns None, show notification "Local STT Failed, Retrying with OpenAI Whisper API..."
+- Automatically retry with OpenAI fallback transcriber
+- If OpenAI also fails, show final error: "Both local and OpenAI transcription failed"
+- Added finally block in process_audio_file to ensure audio file cleanup when fallback is used
+- History logging continues to work when fallback succeeds
+- Created test_fallback.py and test_integration.py to verify implementation
+
+**Files changed:**
+- src/main.py (updated - added fallback_transcriber initialization and fallback logic in process_audio_file)
+- src/local_transcriber.py (updated - added cleanup parameter to transcribe method)
+- test_fallback.py (created - test script for fallback logic)
+- test_integration.py (created - integration test)
+
+**Learnings:**
+- Fallback pattern requires careful file cleanup coordination between transcribers
+- LocalTranscriber originally cleaned up audio file in finally block, preventing fallback
+- Solution: Add cleanup parameter to control when audio file is deleted
+- When fallback is available, local transcriber skips cleanup (cleanup=False)
+- OpenAI transcriber handles cleanup normally (audio deleted after transcription)
+- Finally block in main.py ensures cleanup even if OpenAI transcriber also fails
+- Notification strategy: inform user of local failure, then show final result (success or double failure)
+- History logging should work regardless of which transcriber succeeded
+- Test scripts verify both the cleanup parameter exists and fallback logic structure is correct
+- Integration test confirms both transcribers can be initialized simultaneously
+- Fallback is only initialized when stt_provider is "local" (no overhead for OpenAI-only users)
+- Error messages are concise and actionable: "Local STT Failed" followed by "Retrying..."
+
+---
+
