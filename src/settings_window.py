@@ -1,12 +1,13 @@
 """Settings window module for VoiceControl application."""
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog, scrolledtext
 import json
 from pathlib import Path
 import threading
 import os
 import subprocess
+from .model_scanner import ModelScanner
 
 
 class SettingsWindow:
@@ -23,6 +24,8 @@ class SettingsWindow:
         self.recorder = recorder
         self.window = None
         self.entry_widgets = {}
+        self.model_scanner = ModelScanner(log_path=config.log_path)
+        self.discovered_models = []  # List of discovered models
 
     def show(self):
         """Show the settings window."""
@@ -35,7 +38,7 @@ class SettingsWindow:
         # Create new window
         self.window = tk.Tk()
         self.window.title("Voice Control Settings")
-        self.window.geometry("600x470")
+        self.window.geometry("700x650")
         self.window.resizable(False, False)
 
         # Configure window grid to center the content
@@ -114,6 +117,64 @@ class SettingsWindow:
         )
         autostart_check.grid(row=row, column=1, sticky=tk.W, pady=8, padx=(15, 0))
         self.entry_widgets['autostart_enabled'] = autostart_var
+
+        # Separator
+        row += 1
+        separator = ttk.Separator(main_frame, orient='horizontal')
+        separator.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(15, 15))
+
+        # Local Model Discovery section
+        row += 1
+        model_section_label = ttk.Label(
+            main_frame,
+            text="Local Model Discovery",
+            font=("", 12, "bold")
+        )
+        model_section_label.grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(0, 10))
+
+        # Model scanning buttons
+        row += 1
+        scan_button_frame = ttk.Frame(main_frame)
+        scan_button_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=8)
+
+        scan_default_button = ttk.Button(
+            scan_button_frame,
+            text="Scan Default Paths",
+            command=self._scan_default_paths,
+            width=18
+        )
+        scan_default_button.grid(row=0, column=0, padx=(0, 10))
+
+        scan_folder_button = ttk.Button(
+            scan_button_frame,
+            text="Scan Folder...",
+            command=self._scan_custom_folder,
+            width=18
+        )
+        scan_folder_button.grid(row=0, column=1)
+
+        # Discovered models list
+        row += 1
+        ttk.Label(main_frame, text="Detected Models:").grid(
+            row=row, column=0, columnspan=2, sticky=tk.W, pady=(10, 5)
+        )
+
+        # Scrollable text widget for model list
+        row += 1
+        models_frame = ttk.Frame(main_frame)
+        models_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+
+        self.models_text = scrolledtext.ScrolledText(
+            models_frame,
+            height=6,
+            width=70,
+            state='disabled',
+            wrap=tk.WORD
+        )
+        self.models_text.pack(fill=tk.BOTH, expand=True)
+
+        # Initially show placeholder text
+        self._update_models_display([])
 
         # Note about restart
         row += 1
@@ -349,6 +410,81 @@ Categories=Utility;Accessibility;
         except Exception as e:
             print(f"Failed to remove autostart file: {e}")
             return False
+
+    def _scan_default_paths(self):
+        """Scan default paths for models in background thread."""
+        # Show scanning message
+        self._update_models_display([], scanning=True)
+
+        # Start scan in background
+        def on_scan_complete(models):
+            # Update UI from main thread
+            self.window.after(0, lambda: self._on_models_discovered(models))
+
+        self.model_scanner.scan_default_paths(callback=on_scan_complete)
+
+    def _scan_custom_folder(self):
+        """Prompt user to select a folder and scan it."""
+        folder = filedialog.askdirectory(title="Select folder to scan for models")
+        if folder:
+            # Show scanning message
+            self._update_models_display([], scanning=True)
+
+            # Scan synchronously (since user is waiting)
+            def scan_worker():
+                models = self.model_scanner.scan_folder_sync(folder)
+                # Update UI from main thread
+                self.window.after(0, lambda: self._on_models_discovered(models))
+
+            # Run in background thread
+            thread = threading.Thread(target=scan_worker, daemon=True)
+            thread.start()
+
+    def _on_models_discovered(self, models):
+        """Handle discovered models.
+
+        Args:
+            models: List of model dictionaries with 'name' and 'path' keys
+        """
+        self.discovered_models = models
+        self._update_models_display(models)
+
+        if models:
+            messagebox.showinfo(
+                "Models Found",
+                f"Found {len(models)} model(s).\n\n"
+                "Models are listed below with their paths.\n"
+                "You can copy the path to use in local_model_path config."
+            )
+        else:
+            messagebox.showinfo(
+                "No Models Found",
+                "No Whisper models were detected in the scanned locations.\n\n"
+                "Try scanning a different folder or download a model first."
+            )
+
+    def _update_models_display(self, models, scanning=False):
+        """Update the models text widget with discovered models.
+
+        Args:
+            models: List of model dictionaries
+            scanning: If True, show "Scanning..." message
+        """
+        self.models_text.config(state='normal')
+        self.models_text.delete(1.0, tk.END)
+
+        if scanning:
+            self.models_text.insert(tk.END, "Scanning for models...\n")
+            self.models_text.insert(tk.END, "This may take a moment.\n")
+        elif not models:
+            self.models_text.insert(tk.END, "No models found yet.\n")
+            self.models_text.insert(tk.END, "Click 'Scan Default Paths' or 'Scan Folder...' to search for models.\n")
+        else:
+            for i, model in enumerate(models, 1):
+                self.models_text.insert(tk.END, f"{i}. {model['name']}\n")
+                self.models_text.insert(tk.END, f"   Path: {model['path']}\n\n")
+
+        self.models_text.config(state='disabled')
 
 
 def show_about_dialog():
