@@ -62,13 +62,18 @@ class SettingsWindow:
 
         # Create tabs
         general_tab = ttk.Frame(notebook, padding="20")
+        online_tab = ttk.Frame(notebook, padding="20")
         local_tab = ttk.Frame(notebook, padding="20")
 
         notebook.add(general_tab, text="General")
-        notebook.add(local_tab, text="Local STT")
+        notebook.add(online_tab, text="Online")
+        notebook.add(local_tab, text="Local")
 
         # --- General Tab ---
         self._create_general_tab(general_tab)
+
+        # --- Online Tab ---
+        self._create_online_tab(online_tab)
 
         # --- Local STT Tab ---
         self._create_local_tab(local_tab)
@@ -136,16 +141,6 @@ class SettingsWindow:
         provider_combo.grid(row=row, column=1, sticky=tk.W, pady=8, padx=(15, 0))
         self.entry_widgets['stt_provider'] = provider_var
 
-        # API Key
-        row += 1
-        ttk.Label(parent, text="OpenAI API Key:").grid(
-            row=row, column=0, sticky=tk.W, pady=8
-        )
-        api_key_entry = ttk.Entry(parent, show="*", width=40)
-        api_key_entry.insert(0, self.config.get_api_key())
-        api_key_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
-        self.entry_widgets['api_key'] = api_key_entry
-
         # Max Duration
         row += 1
         ttk.Label(parent, text="Max Recording Duration (seconds):").grid(
@@ -203,6 +198,36 @@ class SettingsWindow:
             foreground="gray"
         )
         note_label.grid(row=row, column=0, columnspan=2, pady=(20, 0))
+
+    def _create_online_tab(self, parent):
+        """Create the Online STT settings tab.
+
+        Args:
+            parent: Parent frame for the tab content
+        """
+        # Configure column weights
+        parent.columnconfigure(1, weight=1)
+
+        row = 0
+
+        # API Key
+        ttk.Label(parent, text="OpenAI API Key:").grid(
+            row=row, column=0, sticky=tk.W, pady=8
+        )
+        api_key_entry = ttk.Entry(parent, show="*", width=40)
+        api_key_entry.insert(0, self.config.get_api_key())
+        api_key_entry.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=8, padx=(15, 0))
+        self.entry_widgets['api_key'] = api_key_entry
+
+        # Help text
+        row += 1
+        help_text = ttk.Label(
+            parent,
+            text="Get your API key from https://platform.openai.com/api-keys",
+            font=("", 9, "italic"),
+            foreground="gray"
+        )
+        help_text.grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
 
     def _create_local_tab(self, parent):
         """Create the Local STT settings tab.
