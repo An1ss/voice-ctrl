@@ -15,7 +15,12 @@ class Config:
         "max_duration_seconds": 240,
         "audio_feedback_enabled": True,
         "keyboard_shortcut": "Ctrl+Shift+Space",
-        "autostart_enabled": False
+        "autostart_enabled": False,
+        "stt_provider": "openai",  # "openai" or "local"
+        "local_engine": "faster-whisper",  # Local STT engine to use
+        "local_model_path": "",  # Path to local model file
+        "local_model_id": "",  # Hugging Face model ID (e.g., "openai/whisper-small")
+        "local_scan_paths": []  # List of paths to scan for models
     }
 
     def __init__(self, config_path=None, log_path=None):
@@ -176,6 +181,38 @@ class Config:
         if "autostart_enabled" in config and not isinstance(config["autostart_enabled"], bool):
             return False
 
+        # Check that stt_provider is a valid string value
+        if "stt_provider" in config:
+            if not isinstance(config["stt_provider"], str):
+                return False
+            if config["stt_provider"] not in ["openai", "local"]:
+                self.logger.error(f"Invalid stt_provider value: {config['stt_provider']}. Must be 'openai' or 'local'")
+                self.notifier.notify_error(
+                    "Configuration Error",
+                    f"Invalid stt_provider: '{config['stt_provider']}'. Using default 'openai'."
+                )
+                config["stt_provider"] = "openai"  # Revert to default
+
+        # Check that local_engine is a string
+        if "local_engine" in config and not isinstance(config["local_engine"], str):
+            return False
+
+        # Check that local_model_path is a string
+        if "local_model_path" in config and not isinstance(config["local_model_path"], str):
+            return False
+
+        # Check that local_model_id is a string
+        if "local_model_id" in config and not isinstance(config["local_model_id"], str):
+            return False
+
+        # Check that local_scan_paths is a list
+        if "local_scan_paths" in config:
+            if not isinstance(config["local_scan_paths"], list):
+                return False
+            # Ensure all items in the list are strings
+            if not all(isinstance(path, str) for path in config["local_scan_paths"]):
+                return False
+
         return True
 
     def get(self, key, default=None):
@@ -229,3 +266,43 @@ class Config:
             True if enabled, False otherwise
         """
         return self.settings.get("autostart_enabled", False)
+
+    def get_stt_provider(self):
+        """Get the STT provider to use.
+
+        Returns:
+            STT provider string: "openai" or "local" (default "openai")
+        """
+        return self.settings.get("stt_provider", "openai")
+
+    def get_local_engine(self):
+        """Get the local STT engine to use.
+
+        Returns:
+            Local engine string (default "faster-whisper")
+        """
+        return self.settings.get("local_engine", "faster-whisper")
+
+    def get_local_model_path(self):
+        """Get the path to the local model file.
+
+        Returns:
+            Model path string or empty string if not set
+        """
+        return self.settings.get("local_model_path", "")
+
+    def get_local_model_id(self):
+        """Get the Hugging Face model ID for local models.
+
+        Returns:
+            Model ID string or empty string if not set
+        """
+        return self.settings.get("local_model_id", "")
+
+    def get_local_scan_paths(self):
+        """Get the list of paths to scan for local models.
+
+        Returns:
+            List of path strings (default empty list)
+        """
+        return self.settings.get("local_scan_paths", [])
