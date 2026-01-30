@@ -740,3 +740,33 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-022 - Add local STT config and defaults
+**Implemented:**
+- Added five new configuration fields to DEFAULT_CONFIG in src/config.py
+- New fields: stt_provider, local_engine, local_model_path, local_model_id, local_scan_paths
+- Implemented comprehensive validation for all new fields with type checking
+- Added special validation for stt_provider to ensure only "openai" or "local" values are accepted
+- Invalid stt_provider values trigger desktop notification and auto-revert to "openai" default
+- Config migration automatically adds new fields to existing config files (backward compatibility)
+- Created five new getter methods: get_stt_provider(), get_local_engine(), get_local_model_path(), get_local_model_id(), get_local_scan_paths()
+- All defaults set appropriately: stt_provider="openai", local_engine="faster-whisper", empty strings for paths, empty list for scan paths
+
+**Files changed:**
+- src/config.py (updated - added 5 new config fields, validation, and getter methods)
+
+**Learnings:**
+- Config migration pattern works well for adding new fields to existing configs without breaking existing setups
+- Validation should be defensive: check type first, then check value constraints
+- For enum-like string values (stt_provider), validate against allowed values and provide clear error messages
+- Auto-revert to defaults on invalid values prevents app from breaking on bad config edits
+- Desktop notifications for config errors are important for users who run from autostart (no console visible)
+- List validation requires two checks: isinstance(list) AND all items are correct type
+- Empty string defaults for optional paths are better than None (simpler string handling)
+- Getter methods should always provide sensible defaults matching DEFAULT_CONFIG
+- Config migration detects missing keys and writes complete config back to disk (not just in-memory merge)
+- The existing migration logic (from US-014) made this implementation straightforward
+- Test all scenarios: fresh config, migration from old config, invalid values, valid enum values
+- Python syntax check (py_compile) and running the app verified no import/syntax errors introduced
+
+---
+
