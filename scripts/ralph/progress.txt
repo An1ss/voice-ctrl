@@ -977,3 +977,32 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-028 - Settings tabs for General, Online, and Local
+**Implemented:**
+- Reorganized Settings window from 2 tabs to 3 tabs: General, Online, Local
+- Created _create_online_tab() method for OpenAI API configuration
+- Moved OpenAI API Key field from General tab to new Online tab
+- General tab now contains: STT Provider, Max Duration, Audio Feedback, Keyboard Shortcut, Start at Login
+- Online tab contains: OpenAI API Key field with helper text
+- Local tab remains unchanged with all local STT configuration options
+- All existing functionality preserved without loss during reorganization
+
+**Files changed:**
+- src/settings_window.py (updated - added Online tab, reorganized tab structure)
+- test_settings_tabs.py (created - manual UI test)
+- test_tabs_structure.py (created - automated structure verification)
+
+**Learnings:**
+- Tab reorganization in tkinter Notebook is straightforward: create Frame, add to notebook with text label
+- Separating concerns into distinct tabs improves UX - Online vs Local STT are clearly separated
+- Moving fields between tabs requires careful tracking of entry_widgets dictionary keys
+- Tab order matters for UX: General first (applies to all), then provider-specific tabs (Online, Local)
+- Automated testing can verify tab structure without launching GUI using inspect.getsource()
+- Helper text in tabs (gray italic labels) provides useful context for users
+- All three tabs share common button frame at bottom (Test Recording, Save, Cancel)
+- The _save_settings method already handles all fields correctly regardless of which tab they're in
+- Tab implementation maintains backward compatibility with existing config file structure
+- Creating test scripts (both manual and automated) ensures changes work correctly
+
+---
+
