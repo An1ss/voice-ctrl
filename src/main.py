@@ -145,9 +145,12 @@ def main():
     if stt_provider == "local":
         print("Using local STT (faster-whisper)")
         transcriber = LocalTranscriber(config=config)
+        # Also initialize OpenAI transcriber for fallback
+        fallback_transcriber = WhisperTranscriber(config=config)
     else:
         print("Using OpenAI Whisper API")
         transcriber = WhisperTranscriber(config=config)
+        fallback_transcriber = None
 
     paster = TextPaster(restore_clipboard=True)
     history_manager = HistoryManager()
@@ -198,28 +201,66 @@ def main():
             audio_file: Path to the audio file to process
             duration_seconds: Duration of the recording in seconds
         """
+        from pathlib import Path
+
         print("Processing audio...")
-        transcribed_text = transcriber.transcribe(audio_file)
+        audio_path = Path(audio_file)
 
-        if transcribed_text:
-            print("Pasting transcribed text...")
-            paster.paste_text(transcribed_text)
+        try:
+            # If using local transcriber with fallback, don't clean up on first attempt
+            if fallback_transcriber is not None:
+                transcribed_text = transcriber.transcribe(audio_file, cleanup=False)
+            else:
+                transcribed_text = transcriber.transcribe(audio_file)
 
-            # Add to history
-            if duration_seconds is None:
-                # Calculate duration from recorder's start time if available
-                if recorder.start_time:
-                    duration_seconds = time.time() - recorder.start_time
+            # If local transcription failed and fallback is available, try OpenAI
+            if transcribed_text is None and fallback_transcriber is not None:
+                print("Local transcription failed, attempting OpenAI fallback...")
+                config.notifier.notify_error(
+                    "Local STT Failed",
+                    "Retrying with OpenAI Whisper API..."
+                )
+
+                # Try OpenAI fallback (it will handle cleanup)
+                transcribed_text = fallback_transcriber.transcribe(audio_file)
+
+                if transcribed_text is None:
+                    # Both local and OpenAI failed
+                    config.notifier.notify_error(
+                        "Transcription Failed",
+                        "Both local and OpenAI transcription failed."
+                    )
                 else:
-                    duration_seconds = 0
+                    print("OpenAI fallback successful!")
 
-            history_manager.add_entry(transcribed_text, duration_seconds)
-            print(f"Added to history (duration: {duration_seconds:.2f}s)")
-        else:
-            print("No transcription result to paste")
+            if transcribed_text:
+                print("Pasting transcribed text...")
+                paster.paste_text(transcribed_text)
 
-        # Update tray icon to idle state after processing
-        tray_icon.set_recording_state(False)
+                # Add to history
+                if duration_seconds is None:
+                    # Calculate duration from recorder's start time if available
+                    if recorder.start_time:
+                        duration_seconds = time.time() - recorder.start_time
+                    else:
+                        duration_seconds = 0
+
+                history_manager.add_entry(transcribed_text, duration_seconds)
+                print(f"Added to history (duration: {duration_seconds:.2f}s)")
+            else:
+                print("No transcription result to paste")
+
+        finally:
+            # Clean up audio file if it still exists (in case local transcriber didn't)
+            if fallback_transcriber is not None and audio_path.exists():
+                try:
+                    audio_path.unlink()
+                    print(f"Cleaned up temporary audio file: {audio_path}")
+                except Exception as e:
+                    print(f"WARNING: Error deleting temporary audio file {audio_path}: {e}")
+
+            # Update tray icon to idle state after processing
+            tray_icon.set_recording_state(False)
 
     def on_auto_stop(audio_file):
         """Callback for when recording auto-stops at max duration."""

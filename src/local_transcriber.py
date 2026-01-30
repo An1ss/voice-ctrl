@@ -101,11 +101,12 @@ class LocalTranscriber:
             self.notifier.notify_transcription_error(f"Failed to load local model: {str(e)[:50]}")
             return False
 
-    def transcribe(self, audio_file_path):
+    def transcribe(self, audio_file_path, cleanup=True):
         """Transcribe audio file using faster-whisper.
 
         Args:
             audio_file_path: Path to audio file (WAV format)
+            cleanup: If True, delete audio file after transcription (default: True)
 
         Returns:
             Transcribed text as string, or None if error occurred
@@ -155,8 +156,9 @@ class LocalTranscriber:
             return None
 
         finally:
-            # Clean up temporary audio file
-            self._cleanup_audio_file(audio_path)
+            # Clean up temporary audio file if requested
+            if cleanup:
+                self._cleanup_audio_file(audio_path)
 
     def _cleanup_audio_file(self, audio_path):
         """Delete temporary audio file after transcription.
