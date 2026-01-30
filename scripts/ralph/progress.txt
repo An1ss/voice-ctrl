@@ -770,3 +770,96 @@ Started: $(date +%Y-%m-%d)
 
 ---
 
+## US-023 - Local STT engine wrapper (faster-whisper)
+**Implemented:**
+- Created src/local_transcriber.py with LocalTranscriber class for local transcription
+- Implemented faster-whisper integration for speech-to-text without API costs
+- Supports both model_path (local file path) and model_id (Hugging Face model name) inputs
+- Automatic model downloading on first use (downloads "base" model by default if not specified)
+- Transcription returns plain text string or None on failure
+- Comprehensive error handling with logging and desktop notifications
+- Updated main.py to conditionally select transcriber based on stt_provider config setting
+- OpenAI transcription path remains completely unchanged when stt_provider is "openai"
+- Added faster-whisper to requirements.txt
+- Created test scripts to verify both local and OpenAI paths work correctly
+
+**Files changed:**
+- src/local_transcriber.py (created - 174 lines)
+- src/main.py (updated - added LocalTranscriber import and conditional provider selection)
+- requirements.txt (updated - added faster-whisper)
+- test_local_stt.py (created - test script for local transcriber)
+- test_provider_selection.py (created - test script for provider selection logic)
+- test_transcription.py (created - comprehensive test suite)
+
+**Learnings:**
+- faster-whisper is a drop-in replacement for OpenAI Whisper that runs locally on CPU
+- faster-whisper requires ctranslate2, huggingface-hub, tokenizers, onnxruntime, and av packages
+- WhisperModel initialization takes: model_source, device ("cpu"/"cuda"/"auto"), compute_type ("int8"/"float16"/"float32")
+- Default to "cpu" device and "int8" compute_type for best CPU performance without GPU requirement
+- Model loading should be lazy (on first transcribe call) to avoid startup delays
+- Models can be specified by path (local file) or by ID (Hugging Face model name like "base", "small", "medium")
+- If neither model_path nor model_id is specified, use "base" as a sensible default
+- faster-whisper downloads models to ~/.cache/huggingface on first use (automatic caching)
+- transcribe() method returns (segments, info) tuple where segments is an iterator
+- Must iterate through segments and join segment.text to get full transcription
+- vad_filter=True enables voice activity detection to filter out non-speech audio
+- beam_size=5 is a good default for transcription quality vs speed tradeoff
+- Return None when no speech detected (empty transcription result)
+- Cleanup audio file in finally block just like OpenAI transcriber for consistency
+- Provider selection in main.py uses simple if/else: check stt_provider == "local" to choose transcriber
+- Both transcribers share same interface: transcribe(audio_file_path) returns string or None
+- Config validation from US-022 ensures stt_provider is only "openai" or "local" (prevents errors)
+- Test suite confirms: local transcriber initializes, loads model, and transcribes without errors
+- OpenAI path verified unchanged: stt_provider="openai" still uses WhisperTranscriber correctly
+- Import faster_whisper inside _load_model() method to avoid import errors if package not installed
+- Error notifications use existing Notifier class for consistency with rest of application
+- Logging pattern matches OpenAI transcriber: ERROR level, same log file, same format
+
+---
+
+## US-024 - Model discovery by scanning folders
+**Implemented:**
+- Created src/model_scanner.py with ModelScanner class for discovering local Whisper models
+- Implemented scan_default_paths() to scan ~/.cache, ~/.local/share, ~/Downloads in background thread
+- Implemented scan_paths() for scanning custom list of directories
+- Implemented scan_folder_sync() for synchronous single-folder scanning
+- Added model detection logic: looks for model.bin, pytorch_model.bin, config.json patterns
+- Implemented _is_model_directory() to identify directories containing Whisper models
+- Created _extract_model_name() to generate human-readable names from Hugging Face paths
+- Added Settings window UI with "Scan Default Paths" and "Scan Folder..." buttons
+- Added scrollable text widget (ScrolledText) to display discovered models
+- Background threading prevents UI blocking during scans
+- Added filedialog for custom folder selection
+- Discovered models show name and full path for easy copying to config
+
+**Files changed:**
+- src/model_scanner.py (created - 230 lines)
+- src/settings_window.py (updated - added imports, UI elements, scan methods)
+- test_model_scanner.py (created - test script)
+- test_settings_ui.py (created - GUI test script)
+
+**Learnings:**
+- Model scanning must run in background threads to avoid blocking UI (daemon=True)
+- os.walk() traverses directory trees efficiently for recursive scanning
+- Limit walk depth (max 5 levels) to avoid scanning too deep and taking too long
+- Hugging Face hub stores models in format: models--Org--model-name/snapshots/hash/
+- Model directories identifiable by presence of model.bin + config.json or vocabulary.txt
+- Common model files: model.bin, pytorch_model.bin, model.safetensors, model.onnx
+- Extract clean names from Hugging Face paths by parsing "models--Org--name" pattern
+- Model size indicators (tiny, base, small, medium, large) make names more user-friendly
+- tkinter.filedialog.askdirectory() provides cross-platform folder picker
+- tkinter.scrolledtext.ScrolledText provides scrollable text widget (better than Text + Scrollbar)
+- Callback pattern allows background thread to update UI via window.after(0, callback)
+- Must use window.after(0, ...) to update tkinter UI from background thread (thread safety)
+- Remove duplicates from scan results by tracking seen paths in a set
+- Handle PermissionError gracefully when scanning directories (skip and continue)
+- Settings window geometry increased to 700x650 to fit new model discovery section
+- Added ttk.Separator to visually separate model discovery from other settings
+- ScrolledText with state='disabled' makes it read-only (prevents user editing)
+- Change state to 'normal' to update content, then back to 'disabled' after updates
+- Test script confirmed: scanner finds models in ~/.cache/huggingface/hub correctly
+- Improved model name extraction: "Faster-Whisper Small" instead of long hash paths
+- Model paths can be copied and used directly in local_model_path config field
+
+---
+

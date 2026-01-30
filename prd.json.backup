@@ -361,6 +361,103 @@
       "passes": true,
       "scope": "current",
       "notes": "Nice-to-have for better user experience, goes well with .deb packaging"
+    },
+    {
+      "id": "US-022",
+      "title": "Add local STT config and defaults",
+      "description": "As a user, I want local STT settings saved in config so my choices persist across restarts.",
+      "acceptanceCriteria": [
+        "Config file includes new fields: `stt_provider`, `local_engine`, `local_model_path`, `local_model_id`, `local_scan_paths`",
+        "Defaults are set on first run and migrated into existing configs",
+        "`stt_provider` supports `openai` and `local` values",
+        "Invalid config values trigger a user notification and revert to defaults"
+      ],
+      "priority": 22,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Local STT engine wrapper (faster-whisper)",
+      "description": "As a user, I want transcription to run with faster-whisper so I can avoid API costs.",
+      "acceptanceCriteria": [
+        "A new local transcriber uses faster-whisper for transcription from WAV input",
+        "Engine supports model path and model ID (Hugging Face model name) inputs",
+        "Transcription returns a plain text string or `None` on failure",
+        "Errors are logged and surfaced via desktop notification",
+        "OpenAI transcription path remains unchanged when `stt_provider` is `openai`"
+      ],
+      "priority": 23,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Model discovery by scanning folders",
+      "description": "As a user, I want the app to scan for existing local models so I can reuse downloads from other apps.",
+      "acceptanceCriteria": [
+        "On demand, scan default paths (e.g., `~/.cache`, `~/.local/share`, `~/Downloads`)",
+        "Allow scanning a user-selected folder",
+        "Detected models are shown in Settings as selectable options",
+        "Each detected model includes a label (model name) and path",
+        "Scanning does not block the UI (runs in a background thread)",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 24,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Settings UI for local STT selection",
+      "description": "As a user, I want to configure local STT in the Settings window so I can easily switch providers and models.",
+      "acceptanceCriteria": [
+        "Settings includes a provider selector: `OpenAI` or `Local`",
+        "When `Local` is selected, show engine selector (default: faster-whisper)",
+        "Show model dropdown or radio list populated by scan results",
+        "Provide buttons: \"Scan Default Paths\" and \"Scan Folder...\"",
+        "Provide a field for `model_id` with a \"Download Model\" action",
+        "Saving settings updates config immediately",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 25,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Model download from scratch",
+      "description": "As a user, I want to download a local model by name so I can use local STT without manual setup.",
+      "acceptanceCriteria": [
+        "Given a model ID (e.g., `openai/whisper-small`), the app downloads it to a local cache",
+        "Progress or status is shown in Settings during download",
+        "Downloaded model appears in the model selection list",
+        "Errors (network, invalid model ID) show a notification",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 26,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Fallback to OpenAI on local failure",
+      "description": "As a user, I want the app to fall back to OpenAI when local transcription fails so I can still get results.",
+      "acceptanceCriteria": [
+        "If local transcription fails, notify the user with a concise error",
+        "Automatically retry with OpenAI Whisper API",
+        "If OpenAI also fails, show a single final error notification",
+        "History logging still records the transcription when fallback succeeds"
+      ],
+      "priority": 27,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
     }
   ]
 }

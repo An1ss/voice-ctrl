@@ -389,7 +389,7 @@
         "OpenAI transcription path remains unchanged when `stt_provider` is `openai`"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": ""
     },
@@ -406,7 +406,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "scope": "current",
       "notes": ""
     },
@@ -415,10 +415,12 @@
       "title": "Settings UI for local STT selection",
       "description": "As a user, I want to configure local STT in the Settings window so I can easily switch providers and models.",
       "acceptanceCriteria": [
-        "Settings includes a provider selector: `OpenAI` or `Local`",
-        "When `Local` is selected, show engine selector (default: faster-whisper)",
-        "Show model dropdown or radio list populated by scan results",
-        "Provide buttons: \"Scan Default Paths\" and \"Scan Folder...\"",
+        "Local STT settings live in a dedicated \"Local\" tab",
+        "Show engine selector (default: faster-whisper)",
+        "Show a model list with name and truncated folder path (full path is copyable)",
+        "Selecting a model sets it as the current local model",
+        "Provide buttons: \"Scan Default Paths\", \"Scan Folder...\", and \"Refresh List\"",
+        "Refresh removes models that no longer exist",
         "Provide a field for `model_id` with a \"Download Model\" action",
         "Saving settings updates config immediately",
         "Verify in browser using dev-browser skill"
@@ -455,6 +457,22 @@
         "History logging still records the transcription when fallback succeeds"
       ],
       "priority": 27,
+      "passes": false,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Settings tabs for General, Online, and Local",
+      "description": "As a user, I want Settings organized into tabs so it is easy to find general, online, and local options.",
+      "acceptanceCriteria": [
+        "Settings opens on a \"General\" tab by default",
+        "A \"Online\" tab contains OpenAI API configuration",
+        "A \"Local\" tab contains local STT configuration",
+        "Existing settings are moved into the appropriate tabs without loss",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 28,
       "passes": false,
       "scope": "current",
       "notes": ""

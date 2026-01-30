@@ -187,7 +187,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - [ ] On demand, scan default paths (e.g., `~/.cache`, `~/.local/share`, `~/Downloads`)
 - [ ] Allow scanning a user-selected folder
 - [ ] Detected models are shown in Settings as selectable options
-- [ ] Each detected model includes a label (model name) and path
+- [ ] Each detected model includes a label (model name) and full path
 - [ ] Scanning does not block the UI (runs in a background thread)
 - [ ] Verify in browser using dev-browser skill
 
@@ -195,10 +195,12 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 **Description:** As a user, I want to configure local STT in the Settings window so I can easily switch providers and models.
 
 **Acceptance Criteria:**
-- [ ] Settings includes a provider selector: `OpenAI` or `Local`
-- [ ] When `Local` is selected, show engine selector (default: faster-whisper)
-- [ ] Show model dropdown or radio list populated by scan results
-- [ ] Provide buttons: "Scan Default Paths" and "Scan Folder..."
+- [ ] Local STT settings live in a dedicated "Local" tab
+- [ ] Show engine selector (default: faster-whisper)
+- [ ] Show a model list with name and truncated folder path (full path is copyable)
+- [ ] Selecting a model sets it as the current local model
+- [ ] Provide buttons: "Scan Default Paths", "Scan Folder...", and "Refresh List"
+- [ ] Refresh removes models that no longer exist
 - [ ] Provide a field for `model_id` with a "Download Model" action
 - [ ] Saving settings updates config immediately
 - [ ] Verify in browser using dev-browser skill
@@ -221,6 +223,16 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - [ ] Automatically retry with OpenAI Whisper API
 - [ ] If OpenAI also fails, show a single final error notification
 - [ ] History logging still records the transcription when fallback succeeds
+
+#### US-028: Settings tabs for General, Online, and Local
+**Description:** As a user, I want Settings organized into tabs so it is easy to find general, online, and local options.
+
+**Acceptance Criteria:**
+- [ ] Settings opens on a "General" tab by default
+- [ ] A "Online" tab contains OpenAI API configuration
+- [ ] A "Local" tab contains local STT configuration
+- [ ] Existing settings are moved into the appropriate tabs without loss
+- [ ] Verify in browser using dev-browser skill
 
 ## Functional Requirements
 
@@ -245,6 +257,7 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - FR-24: The Settings UI must allow selecting provider, engine, and model
 - FR-25: The system must support downloading a model by ID into a local cache
 - FR-26: The system must fall back to OpenAI when local transcription fails
+- FR-27: Settings must be organized into General, Online, and Local tabs
 
 **Feedback:**
 - FR-11: The system must change tray icon appearance when recording is active
