@@ -5,3 +5,4 @@ numpy
 pystray
 pyperclip
 plyer
+faster-whisper

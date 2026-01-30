@@ -1,0 +1,366 @@
+{
+  "project": "VoiceControl",
+  "branchName": "ralph/mvp-phase-1",
+  "description": "System-wide voice dictation tool for Ubuntu using OpenAI Whisper API",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Set up project structure",
+      "description": "Create Python project with virtual environment and proper directory structure.\n\n**What to do:**\n- Create Python virtual environment (venv)\n- Set up directory structure: src/, config/, tests/, scripts/ralph/\n- Create requirements.txt with initial dependencies: openai, pynput, sounddevice, pystray, pyperclip, plyer\n- Configure .gitignore for Python projects (venv/, __pycache__, *.pyc, .env, *.log)\n- Write basic README.md with setup instructions and project overview",
+      "acceptanceCriteria": [
+        "Virtual environment created and can be activated with: source venv/bin/activate",
+        "Directory structure matches: src/, config/, tests/, scripts/ralph/",
+        "requirements.txt lists all needed dependencies",
+        ".gitignore excludes venv/, __pycache__, *.pyc, .env, *.log",
+        "README has clear setup instructions",
+        "No errors when running: python --version (should be 3.8+)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "This is the foundation - must complete first before any other stories",
+      "scope": "current"
+    },
+    {
+      "id": "US-002",
+      "title": "Record audio on keyboard shortcut",
+      "description": "Implement global keyboard listener and audio recording functionality.\n\n**What to do:**\n- Use pynput library to register global keyboard shortcut (Ctrl+Shift+Space)\n- Use sounddevice library to capture audio from default microphone\n- Implement toggle behavior: first press starts recording, second press stops\n- Save recorded audio to temporary WAV file in /tmp/ directory\n- Implement 240-second maximum duration with automatic stop\n- Create src/recorder.py module with AudioRecorder class\n- Create src/main.py as entry point\n\n**Implementation notes:**\n- WAV format, 16kHz sample rate, mono channel (compatible with Whisper)\n- Use threading to avoid blocking the keyboard listener\n- Store recording state (idle/recording) as class attribute",
+      "acceptanceCriteria": [
+        "Global keyboard shortcut (Ctrl+Shift+Space) works across all applications",
+        "First press starts recording, second press stops recording",
+        "Audio saved as WAV file in /tmp/ directory",
+        "File format compatible with OpenAI Whisper API (16kHz, mono)",
+        "Maximum recording duration of 240 seconds enforced (auto-stop)",
+        "No errors when running: python -m src.main",
+        "Manual test: Press shortcut, speak for 5 seconds, press again, verify WAV file created in /tmp/"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Use pynput.keyboard.GlobalHotKeys for cross-platform global hotkey support",
+      "scope": "current"
+    },
+    {
+      "id": "US-003",
+      "title": "Transcribe audio using OpenAI Whisper API",
+      "description": "Integrate OpenAI Whisper API for speech-to-text transcription.\n\n**What to do:**\n- Install and configure openai Python SDK\n- Create src/transcriber.py module with WhisperTranscriber class\n- Read API key from config file at ~/.config/voice-ctrl/config.json\n- Send audio file to OpenAI Whisper API endpoint (/v1/audio/transcriptions)\n- Handle API responses and extract transcribed text\n- Implement error handling for: network errors, invalid API key, file not found, API rate limits\n- Clean up temporary audio file after transcription (success or failure)\n- Log errors to ~/.config/voice-ctrl/voice-ctrl.log\n\n**Implementation notes:**\n- Use openai.Audio.transcribe() method\n- Default to English language (can be auto-detected by Whisper)\n- Set timeout to 30 seconds for API calls",
+      "acceptanceCriteria": [
+        "Audio file successfully sent to OpenAI Whisper API",
+        "API key read from ~/.config/voice-ctrl/config.json",
+        "Transcribed text returned as string",
+        "Graceful error handling for: network issues, invalid API key, timeout",
+        "Temporary audio file deleted after transcription",
+        "Errors logged to ~/.config/voice-ctrl/voice-ctrl.log",
+        "Manual test: Create test WAV file, call transcribe(), verify text returned"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Requires valid OpenAI API key in config file for testing",
+      "scope": "current"
+    },
+    {
+      "id": "US-004",
+      "title": "Insert transcribed text automatically",
+      "description": "Auto-paste transcribed text at cursor position using clipboard.\n\n**What to do:**\n- Use pyperclip library to interact with system clipboard\n- Copy transcribed text to clipboard\n- Use pynput.keyboard.Controller to simulate Ctrl+V keystroke\n- Implement paste functionality in src/paster.py module\n- Optionally save and restore previous clipboard contents\n- Ensure focus remains on the application where user was typing\n\n**Implementation notes:**\n- Wait 100ms between clipboard copy and Ctrl+V to ensure clipboard is ready\n- Test with various applications: terminal, browser, text editor, LibreOffice\n- Handle edge cases: empty transcription, very long text",
+      "acceptanceCriteria": [
+        "Transcribed text copied to system clipboard",
+        "Ctrl+V keystroke simulated successfully",
+        "Text pasted in currently focused application",
+        "Works across different applications: terminal, Firefox, VS Code, gedit",
+        "Clipboard optionally restored to previous contents after paste",
+        "No errors when pasting text",
+        "Manual test: Run app, record speech, verify text appears at cursor in active window"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "May need to handle clipboard access permissions on some Linux systems",
+      "scope": "current"
+    },
+    {
+      "id": "US-005",
+      "title": "Show system tray icon",
+      "description": "Display persistent system tray icon with status indicators.\n\n**What to do:**\n- Use pystray library to create system tray icon\n- Create two icon states: idle (gray microphone) and recording (red microphone)\n- Display appropriate icon based on recording state\n- Show tooltip \"Voice Control\" when hovering over icon\n- Create src/tray_icon.py module with TrayIcon class\n- Icons can be simple PIL-generated images initially (or use icon files if available)\n- Ensure icon is visible in Ubuntu system tray (GNOME Shell)\n\n**Implementation notes:**\n- Use pystray.Icon class\n- Update icon in real-time when recording starts/stops\n- Icon should persist until application is closed",
+      "acceptanceCriteria": [
+        "System tray icon appears when application starts",
+        "Icon shows idle state by default (gray/white microphone icon)",
+        "Icon changes to recording state (red microphone) when recording",
+        "Icon visible in Ubuntu GNOME Shell system tray",
+        "Tooltip displays \"Voice Control\" on hover",
+        "Icon updates in real-time based on recording state",
+        "Manual test: Start app, verify icon in tray, start recording, verify icon changes color"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "GNOME Shell may require TopIcons extension for tray icon support on some systems",
+      "scope": "current"
+    },
+    {
+      "id": "US-006",
+      "title": "Handle errors with notifications",
+      "description": "Display desktop notifications for errors and important events.\n\n**What to do:**\n- Use plyer library for cross-platform desktop notifications\n- Create src/notifier.py module with Notifier class\n- Show notifications for: transcription errors, API failures, network timeouts, invalid API key, no audio detected\n- Each error type should have a specific, user-friendly message\n- Log all errors to ~/.config/voice-ctrl/voice-ctrl.log with timestamp\n- Ensure application continues running after non-fatal errors\n- Create ~/.config/voice-ctrl/ directory if it doesn't exist\n\n**Implementation notes:**\n- Use plyer.notification.notify() with title and message\n- Notification timeout: 5 seconds for errors\n- Log format: [YYYY-MM-DD HH:MM:SS] ERROR: message",
+      "acceptanceCriteria": [
+        "Desktop notification shown for errors",
+        "Specific error messages for: no audio detected, API failure, network timeout, invalid API key",
+        "All errors logged to ~/.config/voice-ctrl/voice-ctrl.log",
+        "Log file created if it doesn't exist",
+        "Application continues running after non-fatal errors",
+        "Log entries include timestamp and error type",
+        "Manual test: Trigger error condition (e.g., invalid API key), verify notification appears and error logged"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Test notifications work on Ubuntu with GNOME desktop environment",
+      "scope": "current"
+    },
+    {
+      "id": "US-007",
+      "title": "Use Shift+Insert for pasting instead of Ctrl+V",
+      "description": "As a user, I want text to paste using Shift+Insert so it works properly in command-line tools and terminals.",
+      "acceptanceCriteria": [
+        "Shift+Insert keystroke simulated instead of Ctrl+V",
+        "Text pastes successfully in terminal applications: bash, zsh, gnome-terminal",
+        "Text pastes successfully in terminal editors: vim, nano, emacs",
+        "Text pastes successfully in GUI applications: Firefox, VS Code, gedit",
+        "Works inside tmux and screen sessions",
+        "No regression in paste functionality",
+        "Manual test: Record speech and verify paste works in terminal, vim, and browser"
+      ],
+      "priority": 7,
+      "passes": true,
+      "scope": "current",
+      "notes": "- Shift+Insert is the standard paste shortcut in terminals and most Linux applications\n- Ctrl+V may be intercepted by terminal emulators for other functions (e.g., in vim it's visual block mode)\n- Both shortcuts work in most GUI applications, but Shift+Insert has better terminal support"
+    },
+    {
+      "id": "US-008",
+      "title": "Load settings from config file",
+      "description": "As a user, I want to customize app behavior through a config file so I can adjust it to my preferences.",
+      "acceptanceCriteria": [
+        "Config file created at `~/.config/voice-ctrl/config.json` on first run",
+        "Default config includes: `api_key`, `max_duration_seconds`, `audio_feedback_enabled`",
+        "Settings loaded at startup and applied",
+        "Invalid config shows error notification with details",
+        "Example config file documented in README"
+      ],
+      "priority": 8,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add audio feedback (beeps)",
+      "description": "As a user, I want to hear beeps when recording starts/stops so I have confirmation without looking at the screen.",
+      "acceptanceCriteria": [
+        "Play start beep when recording begins",
+        "Play stop beep when recording ends",
+        "Audio feedback respects `audio_feedback_enabled` config setting",
+        "Beeps are short, non-intrusive system sounds",
+        "Works even if system volume is low (reasonable volume)"
+      ],
+      "priority": 9,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Make keyboard shortcut configurable",
+      "description": "As a user, I want to change the keyboard shortcut so it doesn't conflict with other apps.",
+      "acceptanceCriteria": [
+        "`keyboard_shortcut` setting in config file (e.g., \"Ctrl+Shift+Space\")",
+        "App parses shortcut string and registers it on startup",
+        "Invalid shortcut shows error with valid format examples",
+        "Changing config requires app restart (document this limitation)"
+      ],
+      "priority": 10,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Add settings window from tray icon",
+      "description": "As a user, I want to click the tray icon and open a settings window so I can adjust preferences without editing JSON.",
+      "acceptanceCriteria": [
+        "Right-click tray icon shows menu: \"Settings\", \"About\", \"Quit\"",
+        "Settings window shows all configurable options with UI controls",
+        "Changes saved to config file immediately",
+        "Settings window has \"Test Recording\" button to verify setup",
+        "Verify in browser using dev-browser skill (if web-based) OR manual verification"
+      ],
+      "priority": 11,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "API key setup wizard",
+      "description": "As a new user, I want a guided setup on first launch so I can easily configure the app.",
+      "acceptanceCriteria": [
+        "First launch detects missing/invalid API key",
+        "Shows setup dialog requesting OpenAI API key",
+        "\"Get API Key\" button opens https://platform.openai.com/api-keys",
+        "Validates API key by making test request",
+        "Saves valid key to config file"
+      ],
+      "priority": 12,
+      "passes": true,
+      "scope": "current",
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Fix tray icon tooltip not showing on hover",
+      "description": "As a user, I want to see a tooltip when hovering over the tray icon so I know what the icon represents.\n\n**Current Issue:**\nNo tooltip appears when hovering over the system tray icon.\n\n**What to fix:**\n- Review src/tray_icon.py tooltip implementation\n- Ensure tooltip is properly set when creating the tray icon\n- Test tooltip displays \"Voice Control\" on hover\n- Verify tooltip works in Ubuntu GNOME Shell system tray",
+      "acceptanceCriteria": [
+        "Tooltip \"Voice Control\" appears when hovering over tray icon",
+        "Tooltip is visible within 1 second of hover",
+        "Tooltip works consistently across app restarts",
+        "Manual test: Start app, hover over icon, verify tooltip shows"
+      ],
+      "priority": 13,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - tooltip not appearing at all"
+    },
+    {
+      "id": "US-014",
+      "title": "Auto-initialize all config parameters on first run",
+      "description": "As a user, I want all configuration parameters to be initialized with defaults on first run so I don't have to manually add them.\n\n**Current Issue:**\nConfig file only contains `api_key` by default. Other parameters (max_duration_seconds, audio_feedback_enabled, keyboard_shortcut) are missing and must be added manually.\n\n**What to fix:**\n- Update src/config.py to write all default config parameters when creating config file\n- Ensure config file includes:\n  - api_key (empty string or from wizard)\n  - max_duration_seconds (240)\n  - audio_feedback_enabled (true)\n  - keyboard_shortcut (\"Ctrl+Shift+Space\")\n- Handle config migration: if user has old config with only api_key, add missing parameters with defaults",
+      "acceptanceCriteria": [
+        "New config file contains all 4 parameters with defaults",
+        "Existing config files get missing parameters added automatically",
+        "Default values match documentation in README",
+        "Manual test: Delete config, start app, verify config has all parameters"
+      ],
+      "priority": 14,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - config only had api_key after setup wizard"
+    },
+    {
+      "id": "US-015",
+      "title": "Fix auto-stop to transcribe recording before exiting",
+      "description": "As a user, I want my recording to be transcribed even when it auto-stops at max duration so I don't lose my dictation.\n\n**Current Issue:**\nWhen recording reaches max_duration_seconds and auto-stops, the recording is NOT transcribed. It just exits without sending audio to Whisper API.\n\n**What to fix:**\n- Review src/recorder.py auto-stop logic\n- Ensure auto-stop behaves the same as manual stop (user pressing shortcut again)\n- After auto-stop, recording should be transcribed and pasted\n- Test with short max_duration (10 seconds) to verify",
+      "acceptanceCriteria": [
+        "Recording auto-stops at configured max_duration_seconds",
+        "Audio is transcribed after auto-stop (same as manual stop)",
+        "Transcribed text is pasted at cursor after auto-stop",
+        "User sees notification or feedback that auto-stop occurred",
+        "Manual test: Set max_duration=10, record for 15s, verify text is transcribed and pasted"
+      ],
+      "priority": 15,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - auto-stop exits without transcribing"
+    },
+    {
+      "id": "US-016",
+      "title": "Fix tray icon right-click menu not appearing",
+      "description": "As a user, I want to right-click the tray icon and see a menu so I can access Settings, About, and Quit options.\n\n**Current Issue:**\nRight-clicking the tray icon does nothing. No menu appears.\n\n**What to fix:**\n- Review src/tray_icon.py menu implementation\n- Ensure right-click event is properly bound to menu\n- Menu should have 3 items: Settings, About, Quit\n- Settings should open settings window (src/settings_window.py)\n- About should show about dialog\n- Quit should exit application cleanly\n- Test on Ubuntu GNOME Shell",
+      "acceptanceCriteria": [
+        "Right-click on tray icon shows menu with 3 items",
+        "\"Settings\" menu item opens settings window",
+        "\"About\" menu item shows about dialog",
+        "\"Quit\" menu item exits application cleanly",
+        "Menu is responsive and doesn't freeze",
+        "Manual test: Right-click icon, verify menu appears and all items work"
+      ],
+      "priority": 16,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - right-click does nothing, menu not appearing"
+    },
+    {
+      "id": "US-017",
+      "title": "Fix setup wizard save button visibility",
+      "description": "As a user, I want to see and click the save button in the setup wizard so I can save my API key without needing to press Enter.\n\n**Current Issue:**\nSetup wizard appears and works, but the \"Validate & Save\" button is not visible. Users must press Enter to save.\n\n**What to fix:**\n- Review src/setup_wizard.py button layout\n- Ensure \"Validate & Save\" button is visible and properly positioned\n- Check window height/width to ensure button isn't cut off\n- Verify button styling makes it clearly visible\n- Test button click functionality",
+      "acceptanceCriteria": [
+        "\"Validate & Save\" button is visible in setup wizard window",
+        "Button is properly positioned below API key input field",
+        "Button responds to mouse clicks",
+        "Button has clear visual styling (not hidden or transparent)",
+        "Window is tall enough to show all elements without scrolling",
+        "Manual test: Delete config, start app, verify button is visible and clickable"
+      ],
+      "priority": 17,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - button exists but not visible, user had to press Enter"
+    },
+    {
+      "id": "US-018",
+      "title": "Fix xclip timeout warnings during clipboard operations",
+      "description": "As a user, I want clipboard operations to complete without timeout warnings so the app works smoothly.\n\n**Current Issue:**\nWarnings appear in console: \"WARNING: Failed to copy to CLIPBOARD via xclip: Command '['xclip', '-selection', 'clipboard']' timed out after 1.0 seconds\"\n\n**What to fix:**\n- Review src/paster.py xclip timeout settings\n- Current timeout is 1.0 seconds, which is too short\n- Increase timeout to 3.0 seconds for both CLIPBOARD and PRIMARY selections\n- Ensure clipboard operations still complete in reasonable time\n- Add fallback to pyperclip if xclip consistently times out",
+      "acceptanceCriteria": [
+        "No timeout warnings during normal clipboard operations",
+        "xclip timeout set to at least 3 seconds",
+        "Clipboard operations complete successfully",
+        "Fallback to pyperclip works if xclip fails",
+        "Console output is clean (no warnings during successful paste)",
+        "Manual test: Trigger recording multiple times, verify no timeout warnings"
+      ],
+      "priority": 18,
+      "passes": true,
+      "scope": "current",
+      "notes": "Bug found during testing - xclip timeout of 1.0s is too short, causing warnings"
+    },
+    {
+      "id": "US-019",
+      "title": "Transcription history log",
+      "description": "As a user, I want to access a history of my recent transcriptions so I can retrieve text from previous recordings if needed.\n\n**What to implement:**\n- Create history storage in ~/.config/voice-ctrl/history.json\n- Store last 30 transcriptions with timestamp, audio duration, and transcribed text\n- Each entry includes: timestamp (ISO format), text, duration_seconds\n- Automatically trim to 30 most recent entries when adding new transcription\n- Add \"View History\" option to tray icon menu\n- Create history viewer window showing recent transcriptions in a scrollable list\n- Allow copying individual transcriptions to clipboard\n- Display transcription timestamp and duration for each entry",
+      "acceptanceCriteria": [
+        "History stored in ~/.config/voice-ctrl/history.json with last 30 transcriptions",
+        "Each entry has timestamp, text, and duration",
+        "Tray menu has \"View History\" option",
+        "History window shows scrollable list of recent transcriptions",
+        "Can copy individual transcriptions to clipboard from history",
+        "Timestamps are human-readable (e.g., \"2026-01-13 14:30:25\")",
+        "History automatically trims to 30 entries (oldest removed)",
+        "Manual test: Record 3 transcriptions, verify they appear in history with correct data"
+      ],
+      "priority": 19,
+      "passes": true,
+      "scope": "current",
+      "notes": "Nice-to-have feature for retrieving previous transcriptions"
+    },
+    {
+      "id": "US-020",
+      "title": "Create .deb package for easy installation",
+      "description": "As a user, I want to install VoiceControl with a .deb package so I don't need to manually set up dependencies and configuration.\n\n**What to implement:**\n- Create Debian package structure (DEBIAN/control, postinst, prerm, etc.)\n- Package installs to /opt/voice-ctrl\n- Include all Python dependencies or document system requirements\n- Post-install script sets up virtual environment with --system-site-packages\n- Create /usr/bin/voice-ctrl launcher script\n- Include .desktop file in /usr/share/applications for application menu\n- Desktop file has proper icon, name, and categories\n- Package depends on: python3, python3-venv, portaudio19-dev, xclip, python3-tk, python3-gi, python3-gi-cairo, gir1.2-gtk-3.0\n- Create build script to generate .deb package\n- Test installation on clean Ubuntu system",
+      "acceptanceCriteria": [
+        "voice-ctrl.deb package can be installed with: sudo dpkg -i voice-ctrl.deb",
+        "Installation automatically handles system dependencies",
+        "Can launch from application menu (shows in launcher)",
+        "Can run from terminal: voice-ctrl",
+        "Application icon appears in system tray after launch",
+        "Config directory ~/.config/voice-ctrl created on first run",
+        "Setup wizard appears on first launch if no API key",
+        "Can uninstall cleanly with: sudo apt remove voice-ctrl",
+        "Manual test: Install on fresh Ubuntu VM, launch from app menu, verify it works"
+      ],
+      "priority": 20,
+      "passes": true,
+      "scope": "current",
+      "notes": "High priority - makes installation much easier for end users"
+    },
+    {
+      "id": "US-021",
+      "title": "Add desktop autostart support",
+      "description": "As a user, I want VoiceControl to automatically start when I log in so I don't have to manually launch it every time.\n\n**What to implement:**\n- Add \"Start at Login\" checkbox to Settings window\n- Store autostart preference in config file\n- Create/remove ~/.config/autostart/voice-ctrl.desktop based on setting\n- Autostart desktop file should have Hidden=false and X-GNOME-Autostart-enabled=true\n- Ensure application starts in background (no terminal window)\n- Show notification on startup when running from autostart\n- Test that autostart works after system reboot",
+      "acceptanceCriteria": [
+        "Settings window has \"Start at Login\" checkbox",
+        "Enabling checkbox creates ~/.config/autostart/voice-ctrl.desktop",
+        "Disabling checkbox removes autostart file",
+        "Application starts automatically after login when enabled",
+        "No terminal window appears during autostart",
+        "Tray icon appears after autostart",
+        "Desktop notification shown: \"VoiceControl started\" (optional)",
+        "Manual test: Enable autostart, reboot, verify app starts automatically"
+      ],
+      "priority": 21,
+      "passes": true,
+      "scope": "current",
+      "notes": "Nice-to-have for better user experience, goes well with .deb packaging"
+    }
+  ]
+}

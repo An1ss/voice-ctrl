@@ -6,6 +6,7 @@ from pynput import keyboard
 from .config import Config
 from .recorder import AudioRecorder
 from .transcriber import WhisperTranscriber
+from .local_transcriber import LocalTranscriber
 from .paster import TextPaster
 from .tray_icon import TrayIcon
 from .settings_window import SettingsWindow, show_about_dialog
@@ -138,7 +139,16 @@ def main():
         max_duration=config.get_max_duration(),
         audio_feedback_enabled=config.is_audio_feedback_enabled()
     )
-    transcriber = WhisperTranscriber(config=config)
+
+    # Initialize transcriber based on stt_provider setting
+    stt_provider = config.get_stt_provider()
+    if stt_provider == "local":
+        print("Using local STT (faster-whisper)")
+        transcriber = LocalTranscriber(config=config)
+    else:
+        print("Using OpenAI Whisper API")
+        transcriber = WhisperTranscriber(config=config)
+
     paster = TextPaster(restore_clipboard=True)
     history_manager = HistoryManager()
 

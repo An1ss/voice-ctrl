@@ -159,6 +159,69 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - [ ] Validates API key by making test request
 - [ ] Saves valid key to config file
 
+### Phase 4: Local Speech-to-Text (STT)
+
+#### US-022: Add local STT config and defaults
+**Description:** As a user, I want local STT settings saved in config so my choices persist across restarts.
+
+**Acceptance Criteria:**
+- [ ] Config file includes new fields: `stt_provider`, `local_engine`, `local_model_path`, `local_model_id`, `local_scan_paths`
+- [ ] Defaults are set on first run and migrated into existing configs
+- [ ] `stt_provider` supports `openai` and `local` values
+- [ ] Invalid config values trigger a user notification and revert to defaults
+
+#### US-023: Local STT engine wrapper (faster-whisper)
+**Description:** As a user, I want transcription to run with faster-whisper so I can avoid API costs.
+
+**Acceptance Criteria:**
+- [ ] A new local transcriber uses faster-whisper for transcription from WAV input
+- [ ] Engine supports model path and model ID (Hugging Face model name) inputs
+- [ ] Transcription returns a plain text string or `None` on failure
+- [ ] Errors are logged and surfaced via desktop notification
+- [ ] OpenAI transcription path remains unchanged when `stt_provider` is `openai`
+
+#### US-024: Model discovery by scanning folders
+**Description:** As a user, I want the app to scan for existing local models so I can reuse downloads from other apps.
+
+**Acceptance Criteria:**
+- [ ] On demand, scan default paths (e.g., `~/.cache`, `~/.local/share`, `~/Downloads`)
+- [ ] Allow scanning a user-selected folder
+- [ ] Detected models are shown in Settings as selectable options
+- [ ] Each detected model includes a label (model name) and path
+- [ ] Scanning does not block the UI (runs in a background thread)
+- [ ] Verify in browser using dev-browser skill
+
+#### US-025: Settings UI for local STT selection
+**Description:** As a user, I want to configure local STT in the Settings window so I can easily switch providers and models.
+
+**Acceptance Criteria:**
+- [ ] Settings includes a provider selector: `OpenAI` or `Local`
+- [ ] When `Local` is selected, show engine selector (default: faster-whisper)
+- [ ] Show model dropdown or radio list populated by scan results
+- [ ] Provide buttons: "Scan Default Paths" and "Scan Folder..."
+- [ ] Provide a field for `model_id` with a "Download Model" action
+- [ ] Saving settings updates config immediately
+- [ ] Verify in browser using dev-browser skill
+
+#### US-026: Model download from scratch
+**Description:** As a user, I want to download a local model by name so I can use local STT without manual setup.
+
+**Acceptance Criteria:**
+- [ ] Given a model ID (e.g., `openai/whisper-small`), the app downloads it to a local cache
+- [ ] Progress or status is shown in Settings during download
+- [ ] Downloaded model appears in the model selection list
+- [ ] Errors (network, invalid model ID) show a notification
+- [ ] Verify in browser using dev-browser skill
+
+#### US-027: Fallback to OpenAI on local failure
+**Description:** As a user, I want the app to fall back to OpenAI when local transcription fails so I can still get results.
+
+**Acceptance Criteria:**
+- [ ] If local transcription fails, notify the user with a concise error
+- [ ] Automatically retry with OpenAI Whisper API
+- [ ] If OpenAI also fails, show a single final error notification
+- [ ] History logging still records the transcription when fallback succeeds
+
 ## Functional Requirements
 
 **Core Functionality:**
@@ -174,6 +237,14 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - FR-8: The system must support configurable settings: API key, max recording duration, audio feedback toggle, keyboard shortcut
 - FR-9: The system must create default config file on first launch if it doesn't exist
 - FR-10: Maximum recording duration must be configurable (default: 240 seconds / 4 minutes)
+
+**Local STT:**
+- FR-21: The system must support two STT providers: `openai` and `local`
+- FR-22: The local provider must use faster-whisper for transcription
+- FR-23: The system must scan default paths and a user-selected folder for model artifacts
+- FR-24: The Settings UI must allow selecting provider, engine, and model
+- FR-25: The system must support downloading a model by ID into a local cache
+- FR-26: The system must fall back to OpenAI when local transcription fails
 
 **Feedback:**
 - FR-11: The system must change tray icon appearance when recording is active
@@ -193,13 +264,13 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 
 ## Non-Goals (Out of Scope)
 
-- No offline transcription (always requires internet for OpenAI API)
 - No support for multiple languages in MVP (uses Whisper's auto-detect)
 - No speaker identification or diarization
 - No custom voice commands or macros (just dictation)
 - No audio editing or preview before transcription
 - No support for other operating systems (Windows, macOS) in initial release
-- No local Whisper model (OpenAI API only)
+- No text-to-speech functionality
+- No local model conversion or optimization pipelines
 - No recording retry mechanism if API fails (just show error)
 - No audio playback of recordings
 
@@ -289,6 +360,12 @@ A system-wide dictation tool for Ubuntu that allows users to transcribe speech t
 - Settings GUI
 - First-run setup wizard
 - Target: Professional, polished application
+
+**Phase 4 - Local STT:**
+- US-022 through US-027
+- Local transcription via faster-whisper
+- Model discovery and download
+- Fallback to OpenAI on failure
 
 ## Installation & Setup (Planned)
 
