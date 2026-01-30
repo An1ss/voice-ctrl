@@ -433,6 +433,7 @@ class SettingsWindow:
             try:
                 # Use LocalTranscriber to download model
                 from .local_transcriber import LocalTranscriber
+                from .config import Config
 
                 # Show progress message
                 self.window.after(0, lambda: messagebox.showinfo(
@@ -442,15 +443,18 @@ class SettingsWindow:
                     "Please wait, this may take several minutes."
                 ))
 
-                # Create transcriber with model_id (this will trigger download)
-                transcriber = LocalTranscriber(
-                    model_path=None,
-                    model_id=model_id,
-                    log_path=self.config.log_path
-                )
+                # Create a temporary config with the model_id to download
+                # We create a new Config instance and override the local_model_id
+                temp_config = Config()
+                temp_config.settings['local_model_id'] = model_id
+                temp_config.settings['local_model_path'] = ""  # Empty to force using model_id
+
+                # Create transcriber with the temp config (this will trigger download)
+                transcriber = LocalTranscriber(config=temp_config)
 
                 # Test load to ensure download succeeded
-                transcriber._load_model()
+                if not transcriber._load_model():
+                    raise Exception("Model download or loading failed")
 
                 # Success - update UI
                 self.window.after(0, lambda: self._on_download_complete(model_id, success=True))
